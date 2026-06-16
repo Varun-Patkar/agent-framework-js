@@ -1,5 +1,11 @@
 # agent-framework-js
 
+[![npm version](https://img.shields.io/npm/v/agent-framework-js.svg)](https://www.npmjs.com/package/agent-framework-js)
+[![CI](https://github.com/Varun-Patkar/agent-framework-js/actions/workflows/ci.yml/badge.svg)](https://github.com/Varun-Patkar/agent-framework-js/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/npm/l/agent-framework-js.svg)](LICENSE)
+[![Types](https://img.shields.io/npm/types/agent-framework-js.svg)](https://www.npmjs.com/package/agent-framework-js)
+[![Node](https://img.shields.io/node/v/agent-framework-js.svg)](https://www.npmjs.com/package/agent-framework-js)
+
 A modular, tree-shakeable JavaScript/TypeScript framework for building and orchestrating AI agents
 in **no-backend** deployments — browser, edge runtimes (e.g. Vercel without serverless functions),
 and Node. It mirrors the in-scope capability set of Microsoft Agent Framework: agents, code tools,
