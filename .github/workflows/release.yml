@@ -39,10 +39,7 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
-      # First publish creates the package using NPM_TOKEN (a one-time granular/automation
-      # token added as a repo secret). Provenance is attached via OIDC (id-token: write).
-      # AFTER the package exists, configure Trusted Publishing on npm and you can delete
-      # the NPM_TOKEN secret — OIDC then works token-free.
+      # Token-free OIDC trusted publishing. Requires the repo+workflow to be configured
+      # as a Trusted Publisher for this package on npmjs.com. Provenance is attached
+      # automatically via the id-token: write permission above.
       - run: npm publish --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
