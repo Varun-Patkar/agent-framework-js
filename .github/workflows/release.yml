@@ -1,0 +1,43 @@
+name: Release
+
+# Publishes the package to npm with provenance when a version tag (vX.Y.Z) is pushed.
+# Uses npm "trusted publishing" (OIDC) — no NPM_TOKEN secret required.
+#
+# Setup required (one-time, on npmjs.com):
+#   Package → Settings → Trusted Publisher → add this GitHub repo + workflow
+#   (Varun-Patkar/agent-framework-js, workflow: .github/workflows/release.yml).
+#
+# Release flow (publishes happen ONLY here, never locally):
+#   npm version patch   # bumps version + creates a git tag
+#   git push --follow-tags
+# (or push a tag manually: git tag v0.1.1 && git push origin v0.1.1)
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # required for npm trusted publishing + provenance
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          registry-url: "https://registry.npmjs.org"
+      # Trusted publishing requires npm >= 11.5.
+      - run: npm install -g npm@latest
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      # OIDC trusted publishing: no token, provenance attached automatically.
+      - run: npm publish
