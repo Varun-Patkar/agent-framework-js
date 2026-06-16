@@ -1,0 +1,51 @@
+# Changelog
+
+All notable changes to this project are documented here.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [0.1.2] - 2026-06-16
+
+### Changed
+
+- Release pipeline switched to npm **trusted publishing (OIDC)** — token-free publishes
+  with provenance from GitHub Actions.
+
+## [0.1.1] - 2026-06-16
+
+### Added
+
+- npm publish metadata: `repository`, `bugs`, `homepage`, `publishConfig` (public access,
+  provenance), and a `prepublishOnly` build/test guard.
+
+## [0.1.0] - 2026-06-16
+
+### Added
+
+- Initial release of `agent-framework-js`, a modular, tree-shakeable agent framework for
+  no-backend deployments (browser, edge, Node).
+- **Agents**: create/run, streaming, reasoning output, multimodal (text + image) input gating,
+  conversation threads with automatic compaction.
+- **Providers**: GitHub Copilot and OpenAI-compatible (e.g. LM Studio) behind a pluggable
+  abstraction, caller-injected credentials, exponential-backoff retry.
+- **Tools**: uniform JSON-Schema tool contract, argument validation, source namespacing,
+  per-tool enable/disable, per-call timeout, bounded tool-call loop with self-correction.
+- **MCP**: remote (HTTP/SSE) transport everywhere and stdio in Node, adapted onto the tool
+  contract with runtime capability gating.
+- **Skills**: progressive disclosure with a client-side keyword index.
+- **Workflows**: sequential, concurrent, handoff, and group patterns; completion signal +
+  max-rounds cap; fail-soft/fail-fast policy; bounded concurrency; human-in-the-loop
+  yield/resume; fail-closed checkpoints.
+- **Middleware**: request/response pipeline around provider calls.
+- **Persistence**: pluggable store with in-memory and browser (localStorage/IndexedDB) adapters.
+- **Observability**: OpenTelemetry spans with centralized secret redaction.
+- **Declarative**: YAML/JSON agent definitions with format auto-detection.
+- Dual ESM + CJS build with TypeScript types and deep-import subpaths for tree-shaking.
+
+[Unreleased]: https://github.com/Varun-Patkar/agent-framework-js/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/Varun-Patkar/agent-framework-js/compare/v0.1.1...v0.1.2
+[0.1.1]: https://github.com/Varun-Patkar/agent-framework-js/releases/tag/v0.1.1
+[0.1.0]: https://github.com/Varun-Patkar/agent-framework-js/tree/v0.1.1
