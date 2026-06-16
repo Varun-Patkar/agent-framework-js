@@ -40,4 +40,4 @@ jobs:
       - run: npm test
       - run: npm run build
       # OIDC trusted publishing: no token, provenance attached automatically.
-      - run: npm publish
+      - run: npm publish --provenance
