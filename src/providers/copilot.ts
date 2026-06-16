@@ -21,6 +21,18 @@ import { createOpenAICompatibleProvider } from "./openai-compatible.js";
 const DEFAULT_COPILOT_BASE_URL = "https://api.githubcopilot.com";
 
 /**
+ * Headers `api.githubcopilot.com` requires on every request. Omitting any of
+ * these causes the API to reject the call with HTTP 400. They are sent by default
+ * and can be overridden per option via `headers`.
+ */
+const COPILOT_DEFAULT_HEADERS: Record<string, string> = {
+	"Editor-Version": "vscode/1.95.0",
+	"Editor-Plugin-Version": "copilot-chat/0.20.0",
+	"Copilot-Integration-Id": "vscode-chat",
+	"Openai-Intent": "conversation-panel",
+};
+
+/**
  * Options for {@link createCopilotProvider}.
  *
  * GitHub Copilot exposes several models, so configure them via `models` (with an
@@ -29,6 +41,12 @@ const DEFAULT_COPILOT_BASE_URL = "https://api.githubcopilot.com";
 export interface CopilotProviderOptions extends CredentialSource, ModelSelectionOptions {
 	/** Override the Copilot base URL if needed. */
 	baseUrl?: string;
+	/**
+	 * Extra/override request headers. Merged over the required Copilot defaults
+	 * (`Editor-Version`, `Editor-Plugin-Version`, `Copilot-Integration-Id`,
+	 * `Openai-Intent`), so you can adjust them without losing the others.
+	 */
+	headers?: Record<string, string>;
 	/** Retry tuning for transient failures. */
 	retry?: RetryOptions;
 	/** Optional custom fetch (for testing or non-standard runtimes). */
@@ -66,6 +84,9 @@ export function createCopilotProvider(options: CopilotProviderOptions): Provider
 		capabilities: options.capabilities,
 		models: options.models,
 		defaultModel: options.defaultModel,
+		// Copilot rejects calls missing its identification headers; defaults are
+		// applied here and remain overridable via `options.headers`.
+		headers: { ...COPILOT_DEFAULT_HEADERS, ...(options.headers ?? {}) },
 		retry: options.retry,
 		fetchImpl: options.fetchImpl,
 	});

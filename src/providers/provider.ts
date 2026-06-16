@@ -111,6 +111,11 @@ export interface GenerateResponse {
 	text: string;
 	/** Reasoning/thinking content — only present for reasoning-capable models. (FR-003a) */
 	reasoning?: string;
+	/**
+	 * Opaque reasoning blob (e.g. Claude thinking signature) to round-trip on the
+	 * next assistant turn for thinking continuity. Never logged or inspected.
+	 */
+	reasoningOpaque?: string;
 	/** Tool calls the model wants to make, if any. */
 	toolCalls?: ToolCall[];
 	/** Approximate token usage if reported by the provider. */

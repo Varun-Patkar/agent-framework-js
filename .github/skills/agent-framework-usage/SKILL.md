@@ -80,6 +80,38 @@ createAgent({ name: "T", instructions: "x", provider: copilot, model: "o3-mini" 
 
 The agent's vision/reasoning gating and context-window/compaction all follow the selected model.
 
+### Provider compatibility & tool calling (handled for you)
+
+The OpenAI-compatible transport (used by both `createOpenAICompatibleProvider` and
+`createCopilotProvider`) handles several provider quirks automatically, so the same agent works
+across Copilot, LM Studio, and Anthropic-via-Copilot:
+
+- **Tool names are sanitized on the wire** to `^[a-zA-Z0-9_-]+$`. Namespaced MCP tools like
+  `webiq.browse` are sent as `webiq_browse` and translated back when the model calls them — your
+  registry keys and `server.tool` namespacing are unchanged. (OpenAI/Copilot 400 on dotted names;
+  LM Studio tolerates them.)
+- **Copilot identification headers are sent by default** (`Editor-Version`,
+  `Editor-Plugin-Version`, `Copilot-Integration-Id`, `Openai-Intent`). `api.githubcopilot.com`
+  rejects calls without them. Override any via the `headers` option on either provider.
+- **Assistant tool-call turns are preserved.** The run loop records `toolCalls` on the assistant
+  `Message` and the transport emits `tool_calls` with `content: null`, so strict providers (e.g.
+  Anthropic) get a `tool_use` paired with each tool result.
+- **Streaming tool calls are accumulated by `index`** (reasoning models may start tool-call
+  fragments at a non-zero index). When a reasoning model returns `finish_reason: "tool_calls"`
+  from the non-streaming endpoint without a `tool_calls` array, `generate` transparently
+  re-requests in streaming mode and assembles them — and throws a typed `ProviderError` if none
+  materialize, so failures are visible rather than silent.
+
+You normally don't configure any of this. Use `headers` only to override a default:
+
+```ts
+const copilot = createCopilotProvider({
+  getCredential: () => myCopilotToken,
+  capabilities: { model: "gpt-4o", maxInputTokens: 128000, maxOutputTokens: 16000 },
+  headers: { "Editor-Version": "myapp/1.0.0" }, // merged over the required defaults
+});
+```
+
 ## 2. Create and run an agent
 
 ```ts
@@ -221,6 +253,42 @@ const agent = await loadAgentDefinition(yamlOrJsonString, {
 ```
 
 Both YAML and JSON are accepted (auto-detected).
+
+## Provider compatibility & tool calling (must-read for Copilot)
+
+GitHub Copilot proxies several upstreams (OpenAI **and** Anthropic). When you select an
+Anthropic-backed model (e.g. `claude-*`) some behaviors differ from plain OpenAI/LM Studio. Account
+for these or tool-using agents will silently fail.
+
+- **Tool names must match `^[a-zA-Z0-9_-]{1,128}$`.** MCP tools are namespaced as `server.tool`
+  (e.g. `webiq.browse`); the **dot is rejected by OpenAI/Copilot with HTTP 400**. LM Studio tolerates
+  it. When targeting Copilot, expose MCP tools under a flat, sanitized name (replace `.` with `_`).
+  If you wrap the tool, set its `source` to `"local"` so the registry uses the name verbatim, and keep
+  the wrapper's `run` delegating to the original MCP tool (the server-side tool name is unaffected).
+
+- **Copilot requires editor/integration headers.** Copilot's endpoint rejects requests that lack
+  `Editor-Version`, `Editor-Plugin-Version`, and `Copilot-Integration-Id`. Supply them via the
+  provider's `fetchImpl` (wrap fetch and set the headers). Without them every call returns HTTP 400.
+
+- **Reasoning models deliver tool calls only over streaming.** For Claude "thinking" models, the
+  **non-streaming** Chat Completions response returns `finish_reason:"tool_calls"` but **no
+  `tool_calls` array** (it returns `reasoning_opaque`/`reasoning_text` + a text preamble). The tool
+  calls arrive only on the **streaming (SSE)** response, as deltas keyed by `tool_calls[].index`
+  (indices may start above 0 because reasoning occupies earlier indices; concatenate the
+  `function.arguments` fragments per index). An agent loop that calls non-streaming `generate` will
+  see zero tool calls and stop after the preamble. Use a model whose tool calls appear non-streaming,
+  or route Copilot through a `fetchImpl` that re-requests in streaming mode and synthesizes a
+  non-streaming response with the assembled `tool_calls`.
+
+- **Anthropic requires paired `tool_use`/`tool_result`.** Each assistant turn that triggered tools
+  must carry a `tool_calls` array whose ids match the following tool messages, or Anthropic returns
+  `400: each tool_result block must have a corresponding tool_use block`. OpenAI/LM Studio tolerate a
+  missing assistant `tool_calls`; Anthropic does not.
+
+- **Browser + Copilot/MCP needs a proxy.** Browsers can't call `api.githubcopilot.com` or a
+  header-authenticated MCP server directly (CORS + no custom headers on the remote MCP transport).
+  In a frontend, proxy both through the dev server (inject the headers there); in a backend, proxy the
+  MCP server and inject its secret header server-side.
 
 ## Configurable safeguards (defaults)
 

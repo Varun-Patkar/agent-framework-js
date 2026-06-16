@@ -73,10 +73,14 @@ export async function runLoop(
 			return { messages: working, final: response, status: "completed" };
 		}
 
-		// Record the assistant's tool-call turn.
+		// Record the assistant's tool-call turn, preserving the tool calls (so strict
+		// providers can pair each result with its call) and any opaque reasoning blob
+		// (for thinking continuity across turns).
 		working.push({
 			role: "assistant",
 			parts: response.text ? [{ type: "text", text: response.text }] : [],
+			toolCalls: response.toolCalls,
+			...(response.reasoningOpaque ? { reasoningOpaque: response.reasoningOpaque } : {}),
 		});
 
 		// Execute each requested tool and feed results (or typed errors) back.
