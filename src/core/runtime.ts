@@ -19,6 +19,11 @@ export interface RuntimeCapabilities {
 	hasIndexedDB: boolean;
 	/** Running under Node.js. */
 	isNode: boolean;
+	/**
+	 * Running inside a web browser (has `window`/`document`). Distinguished from
+	 * edge runtimes, which also lack Node but make server-side (CORS-free) requests.
+	 */
+	isBrowser: boolean;
 }
 
 let cached: RuntimeCapabilities | undefined;
@@ -30,9 +35,12 @@ export function detectRuntime(): RuntimeCapabilities {
 	const g = globalThis as Record<string, unknown>;
 	const proc = g["process"] as { versions?: { node?: string } } | undefined;
 	const isNode = typeof proc !== "undefined" && !!proc.versions?.node;
+	const win = g["window"] as { document?: unknown } | undefined;
+	const isBrowser = typeof win !== "undefined" && typeof win.document !== "undefined";
 
 	cached = {
 		isNode,
+		isBrowser,
 		// Process spawning requires Node's child_process; treat Node as capable.
 		canSpawnProcess: isNode,
 		hasLocalStorage: typeof g["localStorage"] !== "undefined",

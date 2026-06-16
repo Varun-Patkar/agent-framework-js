@@ -35,9 +35,14 @@ describe("US3 MCP (contract)", () => {
 	});
 
 	it("throws a typed unsupported error for stdio where spawning is unavailable", async () => {
-		// Simulate a non-Node runtime by removing process detection.
-		const original = (globalThis as Record<string, unknown>)["process"];
-		(globalThis as Record<string, unknown>)["process"] = undefined;
+		// Simulate a non-Node runtime by swapping `process` for a clone whose
+		// `versions` is cleared (so `isNode` is false), while keeping the real
+		// prototype (nextTick etc.) so vitest's worker keeps functioning.
+		const g = globalThis as Record<string, unknown>;
+		const realProcess = g["process"];
+		const fakeProcess = Object.create(realProcess as object);
+		Object.defineProperty(fakeProcess, "versions", { value: undefined, configurable: true });
+		g["process"] = fakeProcess;
 		resetRuntimeCache();
 		try {
 			const conn = await connectMCP({
@@ -46,7 +51,7 @@ describe("US3 MCP (contract)", () => {
 			});
 			await expect(conn.connect()).rejects.toMatchObject({ kind: "runtime-unsupported" });
 		} finally {
-			(globalThis as Record<string, unknown>)["process"] = original;
+			g["process"] = realProcess;
 			resetRuntimeCache();
 		}
 	});
