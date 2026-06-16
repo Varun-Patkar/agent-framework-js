@@ -216,7 +216,9 @@ const agent = createAgent({
 ```
 
 Remote transport works everywhere. `stdio` (`{ kind: "stdio", command, args }`) works only in Node;
-elsewhere it throws `RuntimeUnsupportedError`.
+elsewhere it throws `RuntimeUnsupportedError`. From a **browser**, a remote MCP server that needs an
+auth header isn't reachable directly (the transport sends no custom headers) — proxy it and inject
+the secret server-side (see *Browser reachability* below).
 
 ## 5. Attach skills
 
@@ -292,41 +294,33 @@ const agent = await loadAgentDefinition(yamlOrJsonString, {
 
 Both YAML and JSON are accepted (auto-detected).
 
-## Provider compatibility & tool calling (must-read for Copilot)
+## Targeting GitHub Copilot or Anthropic (`claude-*`) models
 
-GitHub Copilot proxies several upstreams (OpenAI **and** Anthropic). When you select an
-Anthropic-backed model (e.g. `claude-*`) some behaviors differ from plain OpenAI/LM Studio. Account
-for these or tool-using agents will silently fail.
+Everything that used to require manual workarounds is **built in** — see **Provider compatibility &
+tool calling** under *Create a provider*. With `createCopilotProvider` (or
+`createOpenAICompatibleProvider`) you do **NOT** need to:
 
-- **Tool names must match `^[a-zA-Z0-9_-]{1,128}$`.** MCP tools are namespaced as `server.tool`
-  (e.g. `webiq.browse`); the **dot is rejected by OpenAI/Copilot with HTTP 400**. LM Studio tolerates
-  it. When targeting Copilot, expose MCP tools under a flat, sanitized name (replace `.` with `_`).
-  If you wrap the tool, set its `source` to `"local"` so the registry uses the name verbatim, and keep
-  the wrapper's `run` delegating to the original MCP tool (the server-side tool name is unaffected).
+- wrap `fetchImpl` to add Copilot headers — `Editor-Version`, `Editor-Plugin-Version`,
+  `Copilot-Integration-Id`, `Openai-Intent` are sent by default (override via the `headers` option);
+- sanitize or rename MCP tools — dotted names like `server.tool` are sanitized to
+  `^[a-zA-Z0-9_-]+$` on the wire and translated back automatically, so keep your namespaced names;
+- pair Anthropic `tool_use`/`tool_result` — the run loop records the assistant `toolCalls` and emits
+  `content: null` so each tool result matches its call;
+- re-request in streaming mode for reasoning ("thinking") models — `generate` accumulates streamed
+  `tool_calls` (even when `finish_reason: "tool_calls"` arrives with no array) and throws a typed
+  `ProviderError` if none materialize, so failures are visible, never silent.
 
-- **Copilot requires editor/integration headers.** Copilot's endpoint rejects requests that lack
-  `Editor-Version`, `Editor-Plugin-Version`, and `Copilot-Integration-Id`. Supply them via the
-  provider's `fetchImpl` (wrap fetch and set the headers). Without them every call returns HTTP 400.
+Just create the provider and run the agent. The only thing you must still arrange yourself is
+**transport reachability from a browser** (next note).
 
-- **Reasoning models deliver tool calls only over streaming.** For Claude "thinking" models, the
-  **non-streaming** Chat Completions response returns `finish_reason:"tool_calls"` but **no
-  `tool_calls` array** (it returns `reasoning_opaque`/`reasoning_text` + a text preamble). The tool
-  calls arrive only on the **streaming (SSE)** response, as deltas keyed by `tool_calls[].index`
-  (indices may start above 0 because reasoning occupies earlier indices; concatenate the
-  `function.arguments` fragments per index). An agent loop that calls non-streaming `generate` will
-  see zero tool calls and stop after the preamble. Use a model whose tool calls appear non-streaming,
-  or route Copilot through a `fetchImpl` that re-requests in streaming mode and synthesizes a
-  non-streaming response with the assembled `tool_calls`.
+### Browser reachability (Copilot + remote MCP)
 
-- **Anthropic requires paired `tool_use`/`tool_result`.** Each assistant turn that triggered tools
-  must carry a `tool_calls` array whose ids match the following tool messages, or Anthropic returns
-  `400: each tool_result block must have a corresponding tool_use block`. OpenAI/LM Studio tolerate a
-  missing assistant `tool_calls`; Anthropic does not.
-
-- **Browser + Copilot/MCP needs a proxy.** Browsers can't call `api.githubcopilot.com` or a
-  header-authenticated MCP server directly (CORS + no custom headers on the remote MCP transport).
-  In a frontend, proxy both through the dev server (inject the headers there); in a backend, proxy the
-  MCP server and inject its secret header server-side.
+A browser cannot reach `api.githubcopilot.com` (no CORS) or a header-authenticated remote MCP server
+(the remote MCP transport sends no custom auth headers). Run a small proxy: forward Copilot to its
+host and set the provider's `baseUrl` to the proxy, and/or forward the MCP server while injecting its
+secret header **server-side**. See the Vite proxy example above. `createCopilotProvider` throws
+`RuntimeUnsupportedError` if constructed in a browser against the default host, which is your signal
+to point `baseUrl` at the proxy.
 
 ## Configurable safeguards (defaults)
 
