@@ -20,6 +20,20 @@ export type ContentPart =
 	| { type: "image"; data: string; mimeType: string };
 
 /**
+ * A tool call recorded on an assistant message. Round-tripped to providers that
+ * require the assistant turn to declare its `tool_calls` (e.g. Anthropic via
+ * Copilot) so the following `tool` results have a matching `tool_use`. (FR-012)
+ */
+export interface MessageToolCall {
+	/** Provider-assigned call id, linking the assistant call to its tool result. */
+	id: string;
+	/** Namespaced tool name (registry key). */
+	name: string;
+	/** Raw JSON arguments the model supplied. */
+	arguments: unknown;
+}
+
+/**
  * A conversation message.
  *
  * @example
@@ -34,6 +48,16 @@ export interface Message {
 	toolCallId?: string;
 	/** Optional display name (e.g., the tool name for a tool message). */
 	name?: string;
+	/**
+	 * Tool calls requested by an assistant turn. Persisted so providers that
+	 * require it (e.g. Anthropic) receive `tool_calls` paired with the tool results.
+	 */
+	toolCalls?: MessageToolCall[];
+	/**
+	 * Opaque reasoning blob carried across turns for thinking-capable models, so
+	 * reasoning continuity is preserved without exposing the contents. (FR-003a)
+	 */
+	reasoningOpaque?: string;
 }
 
 /**

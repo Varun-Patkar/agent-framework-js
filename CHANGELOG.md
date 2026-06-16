@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Provider tool calling compatibility (Copilot / OpenAI / Anthropic-via-Copilot).** The
+  OpenAI-compatible transport now:
+  - **Sanitizes tool names on the wire** to `^[a-zA-Z0-9_-]+$` (dotted MCP names like
+    `webiq.browse` → `webiq_browse`) and translates the model's tool-call name back to the
+    registry key, so namespaced tools no longer 400. Registry keys and the `server.tool`
+    namespacing are unchanged.
+  - **Emits assistant `tool_calls` with `content: null`** for tool-call turns. The run loop now
+    persists `toolCalls` (and any opaque reasoning blob) on the assistant `Message`, so strict
+    providers (e.g. Anthropic) receive a `tool_use` paired with each tool result instead of
+    rejecting orphaned tool messages.
+  - **Accumulates streamed `delta.tool_calls[]` keyed by `index`** (fragments may start at a
+    non-zero index when reasoning occupies 0/1), surfacing them as `tool-call` chunks and in the
+    final `done` response.
+  - **Transparently re-requests in streaming mode** from `generate` when a reasoning model reports
+    `finish_reason: "tool_calls"` without a `tool_calls` array, and **fails loud with a typed
+    `ProviderError`** if none materialize (previously the agent stopped silently).
+
+### Added
+
+- `createCopilotProvider` now sends the **required Copilot identification headers**
+  (`Editor-Version`, `Editor-Plugin-Version`, `Copilot-Integration-Id`, `Openai-Intent`) by
+  default; they are overridable via the new `headers` option.
+- `createOpenAICompatibleProvider` gains a `headers` option to merge extra request headers
+  (the `authorization` header is always credential-derived).
+- `Message` gains optional `toolCalls` and `reasoningOpaque`; `GenerateResponse` gains
+  `reasoningOpaque` for thinking continuity. All additive and backward compatible.
+
 ## [0.2.0] - 2026-06-16
 
 ### Added
