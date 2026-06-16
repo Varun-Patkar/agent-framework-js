@@ -16,6 +16,7 @@
 		"verbatimModuleSyntax": true,
 		"resolveJsonModule": true,
 		"types": ["node"],
+		"ignoreDeprecations": "6.0",
 		"outDir": "dist",
 		"rootDir": "src"
 	},

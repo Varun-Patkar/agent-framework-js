@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **GitHub Copilot now requires a backend/proxy in the browser.** `api.githubcopilot.com` sends no
+  CORS headers, so `createCopilotProvider` throws a typed `RuntimeUnsupportedError` when constructed
+  in a browser against the default host. Run it server-side (Node/edge) or set `baseUrl` to a
+  lightweight proxy (e.g. a Vite dev-server proxy); a custom `baseUrl` lifts the guard. Added
+  `isBrowser` to the runtime capability detection.
+- **Tooling upgraded** (dev-only): ESLint 8 → 10 with a migration from `.eslintrc.yml` to flat
+  config (`eslint.config.js`) using the `typescript-eslint` meta package; TypeScript 5 → 6
+  (`ignoreDeprecations: "6.0"` for the soon-removed `baseUrl`); Vitest 2 → 4; `@types/node` 20 → 25.
+  No runtime/public-API impact.
+
 ## [0.3.0] - 2026-06-16
 
 ### Fixed

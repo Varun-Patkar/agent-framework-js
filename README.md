@@ -121,6 +121,12 @@ Core features use only web-standard APIs and run in browser, edge, and Node. Nod
 (stdio MCP, filesystem storage) are gated by runtime detection and throw a typed
 `RuntimeUnsupportedError` when unavailable.
 
+The **GitHub Copilot** provider cannot be used directly from a browser: `api.githubcopilot.com`
+sends no CORS headers, so `createCopilotProvider` throws `RuntimeUnsupportedError` when constructed
+in a browser against the default host. Run it server-side (Node/edge), or route through a
+lightweight proxy (e.g. a Vite dev-server proxy) and set `baseUrl` to your proxy. See the
+[agent-usage skill](.github/skills/agent-framework-usage/SKILL.md) for a proxy example.
+
 ## Scripts
 
 ```bash

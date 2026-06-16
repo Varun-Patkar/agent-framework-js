@@ -112,6 +112,44 @@ const copilot = createCopilotProvider({
 });
 ```
 
+### Copilot needs a backend/proxy in the browser (CORS)
+
+`api.githubcopilot.com` sends **no CORS headers**, so a browser cannot call it directly.
+Constructing `createCopilotProvider` in a browser against the default host throws a typed
+`RuntimeUnsupportedError`. Two supported options:
+
+- **Server-side (Node or an edge function)** — no CORS applies; use the provider as-is.
+- **Browser + a lightweight proxy** — forward requests to `https://api.githubcopilot.com` and point
+  `baseUrl` at your proxy (this lifts the guard). The OpenAI-compatible provider works the same way.
+
+Example Vite dev-server proxy (`vite.config.ts`):
+
+```ts
+export default defineConfig({
+  server: {
+    proxy: {
+      "/copilot": {
+        target: "https://api.githubcopilot.com",
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/copilot/, ""),
+      },
+    },
+  },
+});
+```
+
+```ts
+// In the browser, talk to the proxy instead of the Copilot host directly:
+const copilot = createCopilotProvider({
+  getCredential: () => myCopilotToken,
+  capabilities: { model: "gpt-4o", maxInputTokens: 128000, maxOutputTokens: 16000 },
+  baseUrl: "/copilot", // your proxy; bypasses the browser CORS guard
+});
+```
+
+Never expose a long-lived token to untrusted clients — prefer a server route that injects the
+credential, or have each user supply their own.
+
 ## 2. Create and run an agent
 
 ```ts

@@ -10,12 +10,19 @@
  * client-side); in a backend deployment the developer may supply it, or the user
  * sends it per request over SSL/TLS and the backend must not log or persist it.
  *
+ * Note: the Copilot API (`api.githubcopilot.com`) sends no CORS headers, so it
+ * cannot be called directly from a browser. A browser deployment must route through
+ * a backend/proxy (set `baseUrl` to it); constructing this provider in a browser
+ * against the default host throws {@link RuntimeUnsupportedError}.
+ *
  * @packageDocumentation
  */
 
 import type { Provider, CredentialSource, ModelSelectionOptions } from "./provider.js";
 import type { RetryOptions } from "./retry.js";
 import { createOpenAICompatibleProvider } from "./openai-compatible.js";
+import { detectRuntime } from "../core/runtime.js";
+import { RuntimeUnsupportedError } from "../core/errors.js";
 
 /** Default Copilot-compatible chat completions base URL. */
 const DEFAULT_COPILOT_BASE_URL = "https://api.githubcopilot.com";
@@ -76,10 +83,34 @@ export interface CopilotProviderOptions extends CredentialSource, ModelSelection
  * });
  * // Pick a model per request: provider.generate({ messages, model: "o3-mini" })
  * ```
+ *
+ * @throws {RuntimeUnsupportedError} when constructed in a browser against the
+ * default Copilot host. `api.githubcopilot.com` does not send CORS headers, so a
+ * browser cannot call it directly — host a small backend/proxy and point `baseUrl`
+ * at it (which lifts this guard), or run the provider server-side (Node/edge).
  */
 export function createCopilotProvider(options: CopilotProviderOptions): Provider {
+	const baseUrl = options.baseUrl ?? DEFAULT_COPILOT_BASE_URL;
+
+	// Frontend-only guard: the Copilot API has no CORS support, so a browser must
+	// route through a backend/proxy. Setting a custom `baseUrl` (your proxy) is the
+	// supported opt-in and lifts this guard. Edge/Node (server-side) are unaffected.
+	const usingDefaultHost = baseUrl === DEFAULT_COPILOT_BASE_URL;
+	if (usingDefaultHost && detectRuntime().isBrowser) {
+		throw new RuntimeUnsupportedError(
+			"GitHub Copilot directly from a browser (the Copilot API sends no CORS headers)",
+			{
+				reason: "cors",
+				remedy:
+					"Run a lightweight backend/proxy (e.g. a Vite dev-server proxy or a small server route) " +
+					"that forwards to https://api.githubcopilot.com, then set `baseUrl` to your proxy URL. " +
+					"Alternatively, run the Copilot provider server-side (Node or an edge function).",
+			},
+		);
+	}
+
 	const inner = createOpenAICompatibleProvider({
-		baseUrl: options.baseUrl ?? DEFAULT_COPILOT_BASE_URL,
+		baseUrl,
 		getCredential: options.getCredential,
 		capabilities: options.capabilities,
 		models: options.models,
