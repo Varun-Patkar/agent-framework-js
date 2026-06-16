@@ -5,6 +5,18 @@
   "type": "module",
   "license": "MIT",
   "author": "Varun Anand Patkar",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Varun-Patkar/agent-framework-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Varun-Patkar/agent-framework-js/issues"
+  },
+  "homepage": "https://github.com/Varun-Patkar/agent-framework-js#readme",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "sideEffects": false,
   "engines": {
     "node": ">=18"
@@ -72,7 +84,8 @@
   "files": [
     "dist",
     "README.md",
-    "AGENT_USAGE.md"
+    "AGENT_USAGE.md",
+    "LICENSE"
   ],
   "scripts": {
     "build": "tsup",
@@ -81,7 +94,8 @@
     "test:watch": "vitest",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "audit": "npm audit --audit-level=high"
+    "audit": "npm audit --audit-level=high",
+    "prepublishOnly": "npm run lint && npm run typecheck && npm test && npm run build"
   },
   "keywords": [
     "agent",
