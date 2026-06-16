@@ -84,7 +84,6 @@
   "files": [
     "dist",
     "README.md",
-    "AGENT_USAGE.md",
     "LICENSE",
     "CHANGELOG.md"
   ],

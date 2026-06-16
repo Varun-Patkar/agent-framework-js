@@ -37,7 +37,7 @@ npm run typecheck
 - [ ] New behavior has unit tests; external boundaries have integration tests.
 - [ ] No secrets are hardcoded, logged, or committed.
 - [ ] `npm run lint`, `npm run typecheck`, `npm test`, and `npm run build` all pass.
-- [ ] `README.md` / `AGENT_USAGE.md` updated if public behavior changed.
+- [ ] `README.md` / the agent-usage skill (`.github/skills/agent-framework-usage/SKILL.md`) updated if public behavior changed.
 
 ## Adding a new LLM provider (quick guide)
 
