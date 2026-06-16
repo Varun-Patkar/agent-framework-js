@@ -24,9 +24,12 @@ export function mockProvider(opts?: {
 	onRequest?: (req: GenerateRequest) => void;
 }): Provider {
 	const responses = [...(opts?.responses ?? [{ text: "ok" }])];
+	const capabilities = { ...defaultCaps, ...opts?.capabilities };
 	return {
 		name: "mock",
-		capabilities: { ...defaultCaps, ...opts?.capabilities },
+		capabilities,
+		models: [capabilities],
+		model: () => capabilities,
 		async generate(req) {
 			opts?.onRequest?.(req);
 			return responses.shift() ?? { text: "done" };

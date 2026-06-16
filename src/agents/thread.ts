@@ -6,7 +6,7 @@
  * @packageDocumentation
  */
 
-import type { Message } from "../core/types.js";
+import type { Message, ModelCapabilities } from "../core/types.js";
 import { messageText, textMessage } from "../core/types.js";
 import type { Provider } from "../providers/provider.js";
 
@@ -16,6 +16,8 @@ export interface ThreadOptions {
 	compactionThreshold?: number;
 	/** Provider used to summarize; defaults to the agent's own provider. (FR-004b) */
 	compactionModel?: Provider;
+	/** Capabilities of the model in use; defaults to the provider's default model. */
+	modelCapabilities?: ModelCapabilities;
 }
 
 /** Rough token estimate (~4 chars/token) — avoids a tokenizer dependency. */
@@ -61,7 +63,8 @@ export class Thread {
 	 */
 	async maybeCompact(provider: Provider, options?: ThreadOptions): Promise<boolean> {
 		const threshold = options?.compactionThreshold ?? 0.9;
-		const limit = provider.capabilities.maxInputTokens * threshold;
+		const caps = options?.modelCapabilities ?? provider.capabilities;
+		const limit = caps.maxInputTokens * threshold;
 		if (estimateTokens(this.messages) < limit) return false;
 
 		const summarizer = options?.compactionModel ?? provider;

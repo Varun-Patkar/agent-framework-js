@@ -42,6 +42,36 @@ const res = await agent.run("Say hello.");
 console.log(res.status, res.output);
 ```
 
+### Multiple models (e.g. GitHub Copilot)
+
+A provider can expose several models. Supply `models` (with an optional `defaultModel`), then pick
+one per agent (`model`) or per request. OpenAI-compatible endpoints are usually single-model, so the
+`capabilities` shorthand still works there.
+
+```ts
+import { createAgent, createCopilotProvider } from "agent-framework-js";
+
+const copilot = createCopilotProvider({
+  getCredential: () => myCopilotToken,
+  models: [
+    { model: "gpt-4o", maxInputTokens: 128000, maxOutputTokens: 16000, supportsVision: true },
+    { model: "o3-mini", maxInputTokens: 200000, maxOutputTokens: 100000, supportsReasoning: true },
+  ],
+  defaultModel: "gpt-4o",
+});
+
+// Per agent — capabilities (vision/reasoning/context) follow the chosen model:
+const reasoner = createAgent({
+  name: "Thinker",
+  instructions: "Reason.",
+  provider: copilot,
+  model: "o3-mini",
+});
+
+// Per request:
+await copilot.generate({ messages, model: "o3-mini" });
+```
+
 Prefer **deep imports** for the smallest bundle: `agent-framework-js/agents`,
 `/providers`, `/tools`, `/mcp`, `/skills`, `/workflows`, `/middleware`, `/persistence`,
 `/observability`, `/declarative`.
