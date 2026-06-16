@@ -1,0 +1,165 @@
+{
+  "workflow": "speckit",
+  "specName": "Js Agent Framework",
+  "branch": "master",
+  "selectedAt": "2026-06-16T04:03:20.101Z",
+  "currentStep": "analyze",
+  "status": "tasking",
+  "history": [
+    {
+      "step": "specify",
+      "substep": null,
+      "kind": "start",
+      "from": {
+        "step": null,
+        "substep": null
+      },
+      "by": "extension",
+      "at": "2026-06-16T04:03:20.101Z"
+    },
+    {
+      "step": "specify",
+      "substep": null,
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-06-16T04:04:26Z"
+    },
+    {
+      "step": "clarify",
+      "substep": null,
+      "kind": "start",
+      "from": {
+        "step": "specify",
+        "substep": null
+      },
+      "by": "ai",
+      "at": "2026-06-16T04:29:29Z"
+    },
+    {
+      "step": "clarify",
+      "substep": null,
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-06-16T04:29:29Z"
+    },
+    {
+      "step": "clarify",
+      "substep": null,
+      "kind": "start",
+      "from": {
+        "step": "specify",
+        "substep": null
+      },
+      "by": "ai",
+      "at": "2026-06-16T04:38:54Z"
+    },
+    {
+      "step": "clarify",
+      "substep": null,
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-06-16T04:38:54Z"
+    },
+    {
+      "step": "clarify",
+      "substep": null,
+      "kind": "start",
+      "from": {
+        "step": "clarify",
+        "substep": null
+      },
+      "by": "ai",
+      "at": "2026-06-16T05:16:50Z"
+    },
+    {
+      "step": "clarify",
+      "substep": null,
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-06-16T05:16:50Z"
+    },
+    {
+      "step": "clarify",
+      "substep": null,
+      "kind": "start",
+      "from": {
+        "step": "clarify",
+        "substep": null
+      },
+      "by": "ai",
+      "at": "2026-06-16T05:33:19Z"
+    },
+    {
+      "step": "clarify",
+      "substep": null,
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-06-16T05:33:19Z"
+    },
+    {
+      "step": "clarify",
+      "substep": null,
+      "kind": "start",
+      "from": {
+        "step": "clarify",
+        "substep": null
+      },
+      "by": "ai",
+      "at": "2026-06-16T05:54:04Z"
+    },
+    {
+      "step": "clarify",
+      "substep": null,
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-06-16T05:54:04Z"
+    },
+    {
+      "step": "plan",
+      "substep": null,
+      "kind": "start",
+      "from": {
+        "step": "clarify",
+        "substep": null
+      },
+      "by": "ai",
+      "at": "2026-06-16T06:02:01Z"
+    },
+    {
+      "step": "plan",
+      "substep": null,
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-06-16T06:02:01Z"
+    },
+    {
+      "step": "tasks",
+      "substep": null,
+      "kind": "start",
+      "from": {
+        "step": "plan",
+        "substep": null
+      },
+      "by": "extension",
+      "at": "2026-06-16T06:04:01.418Z"
+    },
+    {
+      "step": "tasks",
+      "substep": null,
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-06-16T06:06:26Z"
+    },
+    {
+      "step": "analyze",
+      "substep": null,
+      "kind": "start",
+      "from": {
+        "step": "tasks",
+        "substep": null
+      },
+      "by": "extension",
+      "at": "2026-06-16T06:08:14.187Z"
+    }
+  ]
+}
