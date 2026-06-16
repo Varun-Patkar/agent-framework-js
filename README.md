@@ -130,6 +130,15 @@ npm run lint
 npm run typecheck
 ```
 
+## Agent usage guide
+
+A complete, agent-facing usage guide is bundled as a skill at
+[.github/skills/agent-framework-usage/SKILL.md](.github/skills/agent-framework-usage/SKILL.md). Any
+AI coding agent working in this repository can load that skill to understand how to install,
+configure, and use the entire public API (providers, agents, tools, MCP, skills, workflows,
+persistence, observability, declarative agents, safeguards, and the typed error model). It is kept in
+sync with the implemented surface.
+
 ## License
 
 MIT

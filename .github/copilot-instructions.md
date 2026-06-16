@@ -52,7 +52,7 @@ Studio). Adding more providers is the main roadmap item (see `CONTRIBUTING.md`).
 - **Safeguards are configurable with safe defaults** (override, `-1` = unlimited where noted):
   `maxIterations` (10), `toolTimeoutMs`, `compactionThreshold` (0.9), provider `retry.maxRetries`
   (3), workflow `maxRounds` (16), `failurePolicy` (fail-soft), `maxConcurrency` (4). Document any new
-  knob in README and `AGENT_USAGE.md`.
+  knob in README and the agent-usage skill (`.github/skills/agent-framework-usage/SKILL.md`).
 
 ## Commands
 
@@ -72,8 +72,8 @@ Tests live in `tests/{unit,integration,contract}` and use a scripted provider fr
 
 1. Code follows the conventions above (modular, secure, tree-shakeable).
 2. New/changed behavior has tests; bug fixes add a regression test.
-3. Public API changes update **TSDoc**, **README.md**, **AGENT_USAGE.md**, and **CHANGELOG.md**
-   (under `## [Unreleased]`).
+3. Public API changes update **TSDoc**, **README.md**, the **agent-usage skill**
+   (`.github/skills/agent-framework-usage/SKILL.md`), and **CHANGELOG.md** (under `## [Unreleased]`).
 4. `npm run lint && npm run typecheck && npm test && npm run build` all pass.
 
 ## Release process (IMPORTANT — publishing is automated, never publish locally)
@@ -107,4 +107,4 @@ CI (`.github/workflows/ci.yml`) runs lint/typecheck/build/test/audit on pushes a
 3. Take credentials via a `getCredential()` callback; reuse `withRetry` / `providerErrorFromStatus`
    from `src/providers/retry.ts`.
 4. Add a contract test in `tests/contract/`, export from `src/providers/index.ts`, and update README
-   - AGENT_USAGE + CHANGELOG.
+   + the agent-usage skill (`.github/skills/agent-framework-usage/SKILL.md`) + CHANGELOG.

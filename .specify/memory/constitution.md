@@ -90,9 +90,10 @@ Rules:
 
 - Every exported API MUST have JSDoc/TSDoc covering purpose, parameters, return values, errors,
   and at least one usage example.
-- The repository MUST maintain a single agent-facing guide (`AGENT_USAGE.md`) that any agent can
-  be handed to understand how to install, configure, and call the package — including available
-  tools, inputs/outputs, and safety constraints. This file MUST stay in sync with the public API.
+- The repository MUST maintain a single agent-facing guide — the agent-usage skill at
+  `.github/skills/agent-framework-usage/SKILL.md` — that any agent can load to understand how to
+  install, configure, and call the package — including available tools, inputs/outputs, and safety
+  constraints. This skill MUST stay in sync with the public API.
 - README and changelog MUST be updated in the same change that alters public behavior.
 
 Rationale: This package exists to be consumed by agents and the developers who build them. If an
@@ -134,7 +135,7 @@ tooling contract keeps capabilities modular, secure, and documentable.
   checks before merge.
 - Code review MUST verify compliance with all five Core Principles; a reviewer MUST explicitly
   confirm modularity, security, tests, and documentation are satisfied.
-- Public API changes MUST update `AGENT_USAGE.md`, README, and the changelog in the same PR.
+- Public API changes MUST update the agent-usage skill (`.github/skills/agent-framework-usage/SKILL.md`), README, and the changelog in the same PR.
 - Any deviation from a principle MUST be documented in the PR with explicit justification and a
   plan to remove the deviation; unjustified violations block merge.
 

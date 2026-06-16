@@ -1,7 +1,12 @@
-# AGENT_USAGE.md — agent-framework-js
+---
+name: agent-framework-usage
+description: 'Agent-facing usage guide for the agent-framework-js package — how to install, configure, and use its entire public API from a no-backend (browser/edge/Node) environment. USE FOR: how to use agent-framework-js, create a provider (Copilot or OpenAI-compatible / LM Studio), build and run an agent, stream responses, multiple models, define code tools, connect MCP servers, attach skills, orchestrate workflows (sequential/concurrent/handoff/group), persist conversations, configure observability/OpenTelemetry, load declarative YAML/JSON agents, configurable safeguards, and the typed error model. Kept in sync with the implemented public surface. DO NOT USE FOR: internal/source code contribution conventions (see copilot-instructions.md) or release/publish process.'
+---
 
-> Hand this file to any AI agent. It describes how to install, configure, and use this package
-> entirely from its public API. It is kept in sync with the implemented surface.
+# agent-framework-js — Agent Usage Guide
+
+> Load this skill when you (an AI agent) need to install, configure, or use the
+> `agent-framework-js` package from its public API. It is kept in sync with the implemented surface.
 
 ## What this is
 
