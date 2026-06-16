@@ -1,0 +1,131 @@
+{
+	"name": "agent-framework-js",
+	"version": "0.1.0",
+	"description": "Modular, tree-shakeable JavaScript/TypeScript agent framework for no-backend deployments (browser, edge, Node). Agents, tools, MCP, skills, multi-agent workflows, middleware, persistence, and OpenTelemetry observability.",
+	"type": "module",
+	"license": "MIT",
+	"author": "Varun Anand Patkar",
+	"sideEffects": false,
+	"engines": {
+		"node": ">=18"
+	},
+	"main": "./dist/index.cjs",
+	"module": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js",
+			"require": "./dist/index.cjs"
+		},
+		"./agents": {
+			"types": "./dist/agents/index.d.ts",
+			"import": "./dist/agents/index.js",
+			"require": "./dist/agents/index.cjs"
+		},
+		"./providers": {
+			"types": "./dist/providers/index.d.ts",
+			"import": "./dist/providers/index.js",
+			"require": "./dist/providers/index.cjs"
+		},
+		"./tools": {
+			"types": "./dist/tools/index.d.ts",
+			"import": "./dist/tools/index.js",
+			"require": "./dist/tools/index.cjs"
+		},
+		"./mcp": {
+			"types": "./dist/mcp/index.d.ts",
+			"import": "./dist/mcp/index.js",
+			"require": "./dist/mcp/index.cjs"
+		},
+		"./skills": {
+			"types": "./dist/skills/index.d.ts",
+			"import": "./dist/skills/index.js",
+			"require": "./dist/skills/index.cjs"
+		},
+		"./workflows": {
+			"types": "./dist/workflows/index.d.ts",
+			"import": "./dist/workflows/index.js",
+			"require": "./dist/workflows/index.cjs"
+		},
+		"./middleware": {
+			"types": "./dist/middleware/index.d.ts",
+			"import": "./dist/middleware/index.js",
+			"require": "./dist/middleware/index.cjs"
+		},
+		"./persistence": {
+			"types": "./dist/persistence/index.d.ts",
+			"import": "./dist/persistence/index.js",
+			"require": "./dist/persistence/index.cjs"
+		},
+		"./observability": {
+			"types": "./dist/observability/index.d.ts",
+			"import": "./dist/observability/index.js",
+			"require": "./dist/observability/index.cjs"
+		},
+		"./declarative": {
+			"types": "./dist/declarative/index.d.ts",
+			"import": "./dist/declarative/index.js",
+			"require": "./dist/declarative/index.cjs"
+		}
+	},
+	"files": [
+		"dist",
+		"README.md",
+		"AGENT_USAGE.md"
+	],
+	"scripts": {
+		"build": "tsup",
+		"typecheck": "tsc --noEmit",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"lint": "eslint .",
+		"format": "prettier --write .",
+		"audit": "npm audit --audit-level=high"
+	},
+	"keywords": [
+		"agent",
+		"agents",
+		"ai",
+		"llm",
+		"mcp",
+		"orchestration",
+		"workflows",
+		"openai",
+		"copilot",
+		"no-backend",
+		"edge"
+	],
+	"dependencies": {
+		"ajv": "^8.17.1"
+	},
+	"peerDependencies": {
+		"@modelcontextprotocol/sdk": "^1.0.0",
+		"@opentelemetry/api": "^1.9.0",
+		"yaml": "^2.5.0"
+	},
+	"peerDependenciesMeta": {
+		"@modelcontextprotocol/sdk": {
+			"optional": true
+		},
+		"@opentelemetry/api": {
+			"optional": true
+		},
+		"yaml": {
+			"optional": true
+		}
+	},
+	"devDependencies": {
+		"@modelcontextprotocol/sdk": "^1.0.0",
+		"@opentelemetry/api": "^1.9.0",
+		"@types/node": "^20.14.0",
+		"@typescript-eslint/eslint-plugin": "^7.16.0",
+		"@typescript-eslint/parser": "^7.16.0",
+		"eslint": "^8.57.0",
+		"prettier": "^3.3.0",
+		"tsup": "^8.2.0",
+		"typescript": "^5.5.0",
+		"vitest": "^2.0.0",
+		"yaml": "^2.5.0"
+	}
+}

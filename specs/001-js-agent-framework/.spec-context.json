@@ -3,8 +3,8 @@
   "specName": "Js Agent Framework",
   "branch": "master",
   "selectedAt": "2026-06-16T04:03:20.101Z",
-  "currentStep": "analyze",
-  "status": "tasking",
+  "currentStep": "implement",
+  "status": "implemented",
   "history": [
     {
       "step": "specify",
@@ -160,6 +160,135 @@
       },
       "by": "extension",
       "at": "2026-06-16T06:08:14.187Z"
+    },
+    {
+      "step": "analyze",
+      "substep": null,
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-06-16T06:11:53Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "kind": "start",
+      "from": {
+        "step": "tasks",
+        "substep": null
+      },
+      "by": "ai",
+      "at": "2026-06-16T06:38:25Z"
+    },
+    {
+      "step": "implement",
+      "substep": "phase-1-2",
+      "task": "T001-T012",
+      "kind": "start",
+      "by": "ai",
+      "at": "2026-06-16T06:38:25Z"
+    },
+    {
+      "step": "implement",
+      "substep": "phase-3-4-us1-us2",
+      "task": "T013-T031",
+      "kind": "start",
+      "by": "ai",
+      "at": "2026-06-16T06:38:25Z"
+    },
+    {
+      "step": "implement",
+      "substep": "phase-5-10-us3-us8",
+      "task": "T032-T071",
+      "kind": "start",
+      "by": "ai",
+      "at": "2026-06-16T06:38:25Z"
+    },
+    {
+      "step": "implement",
+      "substep": "phase-11-polish",
+      "task": "T072-T080",
+      "kind": "start",
+      "by": "ai",
+      "at": "2026-06-16T06:38:25Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-06-16T06:38:25Z"
     }
-  ]
+  ],
+  "task_summaries": {
+    "T001-T012": {
+      "status": "DONE",
+      "did": "Scaffolded the package (dual ESM+CJS build, deep-import exports, tooling) and the shared core: types, typed error hierarchy, runtime capability detection, and centralized secret redaction.",
+      "files": [
+        "package.json",
+        "tsconfig.json",
+        "tsup.config.ts",
+        "vitest.config.ts",
+        ".eslintrc.yml",
+        ".github/workflows/ci.yml",
+        "src/core/types.ts",
+        "src/core/errors.ts",
+        "src/core/runtime.ts",
+        "src/core/redaction.ts",
+        "tests/unit/redaction.test.ts"
+      ]
+    },
+    "T013-T031": {
+      "status": "DONE",
+      "did": "Implemented providers (Copilot + OpenAI-compatible with retry/backoff), the agent runtime (streaming, reasoning, multimodal gating, thread compaction), and the tool contract/registry with JSON-Schema validation and bounded tool-call loop.",
+      "files": [
+        "src/providers/provider.ts",
+        "src/providers/retry.ts",
+        "src/providers/openai-compatible.ts",
+        "src/providers/copilot.ts",
+        "src/agents/agent.ts",
+        "src/agents/thread.ts",
+        "src/agents/loop.ts",
+        "src/tools/tool.ts",
+        "src/tools/validate.ts",
+        "src/tools/registry.ts"
+      ]
+    },
+    "T032-T071": {
+      "status": "DONE",
+      "did": "Implemented MCP integration (remote/stdio gating), skills (progressive disclosure), workflows (4 patterns, HITL, checkpoints, fail-soft/fast, concurrency), persistence adapters, OpenTelemetry observability with redaction, and the YAML/JSON declarative loader.",
+      "files": [
+        "src/mcp/connection.ts",
+        "src/mcp/adapter.ts",
+        "src/skills/skill.ts",
+        "src/skills/index.ts",
+        "src/workflows/workflow.ts",
+        "src/workflows/patterns.ts",
+        "src/workflows/concurrency.ts",
+        "src/workflows/checkpoint.ts",
+        "src/persistence/store.ts",
+        "src/persistence/memory.ts",
+        "src/persistence/browser.ts",
+        "src/observability/tracing.ts",
+        "src/declarative/loader.ts"
+      ]
+    },
+    "T072-T080": {
+      "status": "DONE_WITH_CONCERNS",
+      "did": "Added the public middleware API, README, AGENT_USAGE.md, tree-shaking/runtime-gating/no-builtin-tools unit tests; full suite (52 tests) passes, typecheck clean, dual build succeeds, lint clean.",
+      "files": [
+        "src/middleware/middleware.ts",
+        "src/middleware/use.ts",
+        "README.md",
+        "AGENT_USAGE.md",
+        "tests/unit/tree-shaking.test.ts",
+        "tests/unit/runtime-gating.test.ts",
+        "tests/unit/no-builtin-tools.test.ts"
+      ],
+      "concerns": [
+        "npm audit reports 6 advisories but all are in dev tooling (vitest/vite/esbuild/tsup); production deps (`npm audit --omit=dev`) report 0 vulnerabilities. Fixing requires a breaking vitest 3 upgrade, deferred to avoid destabilizing the suite.",
+        "Copilot provider uses the OpenAI-compatible transport against Copilot's endpoint rather than a dedicated Copilot SDK; verify against the real Copilot API/token before release.",
+        "Quickstart scenarios validated via the automated suite; live LM Studio/Copilot and a Vercel no-serverless deployment should be smoke-tested manually."
+      ]
+    }
+  }
 }
