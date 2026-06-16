@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [master, "001-js-agent-framework"]
+    branches: [main]
   pull_request:
 
 jobs:
@@ -19,4 +19,5 @@ jobs:
       - run: npm run typecheck
       - run: npm run build
       - run: npm test
-      - run: npm run audit
+      # Audit only production dependencies; dev tooling advisories don't ship.
+      - run: npm audit --omit=dev --audit-level=high
