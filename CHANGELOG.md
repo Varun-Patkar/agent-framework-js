@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-06-16
+
 ### Added
 
 - **Multi-model providers**: providers can now be configured with multiple models via `models`
@@ -15,6 +17,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   per request (`generate({ ..., model })`) or per agent (`createAgent({ ..., model })`). The
   `Provider` interface gains `models` and `model(name?)`, and `resolveModels()` is exported.
   Backward compatible: existing single-`capabilities` usage is unchanged.
+
+### Changed
+
+- The agent-facing usage guide is now shipped as a loadable skill at
+  `.github/skills/agent-framework-usage/SKILL.md` (replacing the former `AGENT_USAGE.md`). All
+  references (copilot-instructions, CONTRIBUTING, constitution, package.json) were updated and the
+  README now points to the skill.
 
 ## [0.1.2] - 2026-06-16
 
