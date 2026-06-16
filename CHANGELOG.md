@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-06-16
+
 ### Changed
 
 - **GitHub Copilot now requires a backend/proxy in the browser.** `api.githubcopilot.com` sends no
