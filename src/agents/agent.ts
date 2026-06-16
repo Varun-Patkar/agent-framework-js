@@ -24,6 +24,8 @@ export interface AgentConfig {
 	name: string;
 	instructions: string;
 	provider: Provider;
+	/** Which of the provider's models to use; defaults to the provider's default model. */
+	model?: string;
 	tools?: Tool[];
 	skills?: Skill[];
 	/** Max tool-call iterations per run; -1 = unlimited. Default 10. (FR-012b) */
@@ -102,9 +104,11 @@ export function createAgent(config: AgentConfig): Agent {
 	const registry = new ToolRegistry(config.tools ?? []);
 	const skillIndex = new SkillIndex(config.skills ?? []);
 	const middleware = config.middleware ?? [];
+	/** Capabilities of the model this agent uses (selected from the provider). */
+	const modelCaps = () => config.provider.model(config.model);
 
 	function gateVision(messages: Message[]): void {
-		if (!config.provider.capabilities.supportsVision && messages.some(hasImage)) {
+		if (!modelCaps().supportsVision && messages.some(hasImage)) {
 			throw new ProviderError(
 				"Image input was provided but the configured model does not support vision",
 				"client",
@@ -127,7 +131,7 @@ export function createAgent(config: AgentConfig): Agent {
 	async function callProvider(req: GenerateRequest): Promise<GenerateResponse> {
 		const ctx: MiddlewareContext = {
 			agentName: config.name,
-			request: req,
+			request: { ...req, model: req.model ?? config.model },
 		};
 		const pipeline = composeMiddleware(middleware, (c) => config.provider.generate(c.request));
 		return pipeline(ctx);
@@ -144,6 +148,7 @@ export function createAgent(config: AgentConfig): Agent {
 		await thread.maybeCompact(config.provider, {
 			compactionThreshold: config.compactionThreshold,
 			compactionModel: config.compactionModel,
+			modelCapabilities: modelCaps(),
 		} satisfies ThreadOptions);
 		return thread;
 	}
@@ -170,7 +175,7 @@ export function createAgent(config: AgentConfig): Agent {
 			}
 			return {
 				output: loop.final.text,
-				reasoning: config.provider.capabilities.supportsReasoning ? loop.final.reasoning : undefined,
+				reasoning: modelCaps().supportsReasoning ? loop.final.reasoning : undefined,
 				status: loop.status,
 				partial: loop.status === "incomplete",
 				thread,
@@ -203,12 +208,13 @@ export function createAgent(config: AgentConfig): Agent {
 			for await (const chunk of config.provider.generateStream({
 				messages: thread.messages,
 				tools: registry.specs(),
+				model: config.model,
 				signal: opts?.signal,
 			})) {
 				if (chunk.type === "text") {
 					text += chunk.text;
 					yield { type: "text", text: chunk.text };
-				} else if (chunk.type === "reasoning" && config.provider.capabilities.supportsReasoning) {
+				} else if (chunk.type === "reasoning" && modelCaps().supportsReasoning) {
 					reasoning += chunk.text;
 					yield { type: "reasoning", text: chunk.text };
 				} else if (chunk.type === "done") {
@@ -230,7 +236,7 @@ export function createAgent(config: AgentConfig): Agent {
 			type: "done",
 			result: {
 				output: text,
-				reasoning: config.provider.capabilities.supportsReasoning ? reasoning || undefined : undefined,
+				reasoning: modelCaps().supportsReasoning ? reasoning || undefined : undefined,
 				status: "completed",
 				partial: false,
 				thread,

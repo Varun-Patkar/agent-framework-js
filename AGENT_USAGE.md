@@ -52,6 +52,29 @@ const copilot = createCopilotProvider({
 `capabilities` is required: `maxInputTokens`, `maxOutputTokens`, and optional `supportsVision` /
 `supportsReasoning` flags.
 
+### Multiple models
+
+A provider may expose several models (GitHub Copilot commonly does; OpenAI-compatible is usually
+one). Use `models` + optional `defaultModel`, then select per agent or per request:
+
+```ts
+const copilot = createCopilotProvider({
+  getCredential: () => myCopilotToken,
+  models: [
+    { model: "gpt-4o", maxInputTokens: 128000, maxOutputTokens: 16000, supportsVision: true },
+    { model: "o3-mini", maxInputTokens: 200000, maxOutputTokens: 100000, supportsReasoning: true },
+  ],
+  defaultModel: "gpt-4o",
+});
+
+provider.models; // all configured models
+provider.model("o3-mini"); // look up one (throws if not configured)
+await copilot.generate({ messages, model: "o3-mini" }); // per request
+createAgent({ name: "T", instructions: "x", provider: copilot, model: "o3-mini" }); // per agent
+```
+
+The agent's vision/reasoning gating and context-window/compaction all follow the selected model.
+
 ## 2. Create and run an agent
 
 ```ts

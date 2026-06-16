@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Multi-model providers**: providers can now be configured with multiple models via `models`
+  (with an optional `defaultModel`) — GitHub Copilot commonly exposes several, while
+  OpenAI-compatible endpoints stay single-model via the `capabilities` shorthand. Select a model
+  per request (`generate({ ..., model })`) or per agent (`createAgent({ ..., model })`). The
+  `Provider` interface gains `models` and `model(name?)`, and `resolveModels()` is exported.
+  Backward compatible: existing single-`capabilities` usage is unchanged.
+
 ## [0.1.2] - 2026-06-16
 
 ### Changed

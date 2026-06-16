@@ -6,7 +6,7 @@
  * @packageDocumentation
  */
 
-import type { ModelCapabilities, Message, ContentPart } from "../core/types.js";
+import type { Message, ContentPart } from "../core/types.js";
 import { ProviderError } from "../core/errors.js";
 import type {
 	Provider,
@@ -16,14 +16,18 @@ import type {
 	GenerateChunk,
 	ToolCall,
 } from "./provider.js";
+import { resolveModels, type ModelSelectionOptions } from "./provider.js";
 import { withRetry, providerErrorFromStatus, type RetryOptions } from "./retry.js";
 
-/** Options for {@link createOpenAICompatibleProvider}. */
-export interface OpenAICompatibleProviderOptions extends CredentialSource {
+/**
+ * Options for {@link createOpenAICompatibleProvider}.
+ *
+ * Supply a single model via `capabilities`, or multiple via `models` (most
+ * OpenAI-compatible endpoints expose one model, but multiple are supported).
+ */
+export interface OpenAICompatibleProviderOptions extends CredentialSource, ModelSelectionOptions {
 	/** Base URL of the OpenAI-compatible API, e.g. `http://localhost:1234/v1`. */
 	baseUrl: string;
-	/** Per-model capability configuration. */
-	capabilities: ModelCapabilities;
 	/** Retry tuning for transient failures. */
 	retry?: RetryOptions;
 	/** Optional custom fetch (for testing or non-standard runtimes). */
@@ -75,6 +79,7 @@ export function createOpenAICompatibleProvider(
 ): Provider {
 	const doFetch = options.fetchImpl ?? globalThis.fetch;
 	const url = `${options.baseUrl.replace(/\/$/, "")}/chat/completions`;
+	const { models, defaultModel, modelOf } = resolveModels(options);
 
 	async function authHeaders(): Promise<Record<string, string>> {
 		const cred = await options.getCredential();
@@ -85,7 +90,7 @@ export function createOpenAICompatibleProvider(
 
 	function body(req: GenerateRequest, stream: boolean): string {
 		return JSON.stringify({
-			model: options.capabilities.model,
+			model: modelOf(req.model).model,
 			messages: toOpenAIMessages(req.messages),
 			stream,
 			...(req.tools && req.tools.length > 0
@@ -136,7 +141,7 @@ export function createOpenAICompatibleProvider(
 			const message = choice.message;
 			return {
 				text: (message["content"] as string) ?? "",
-				reasoning: options.capabilities.supportsReasoning
+				reasoning: modelOf(req.model).supportsReasoning
 					? ((message["reasoning"] as string) ?? undefined)
 					: undefined,
 				toolCalls: parseToolCalls(message),
@@ -184,7 +189,7 @@ export function createOpenAICompatibleProvider(
 					text += delta.content;
 					yield { type: "text", text: delta.content };
 				}
-				if (delta?.reasoning && options.capabilities.supportsReasoning) {
+				if (delta?.reasoning && modelOf(req.model).supportsReasoning) {
 					reasoning += delta.reasoning;
 					yield { type: "reasoning", text: delta.reasoning };
 				}
@@ -196,7 +201,14 @@ export function createOpenAICompatibleProvider(
 		};
 	}
 
-	return { name: "openai-compatible", capabilities: options.capabilities, generate, generateStream };
+	return {
+		name: "openai-compatible",
+		capabilities: defaultModel,
+		models,
+		model: modelOf,
+		generate,
+		generateStream,
+	};
 }
 
 function safeJson(s: string): unknown {
