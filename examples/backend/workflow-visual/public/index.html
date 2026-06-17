@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Workflow visual · agent-framework-js</title>
+		<style>
+			:root { --bg:#0d1117; --panel:#161b22; --border:#30363d; --text:#e6edf3; --muted:#8b949e; --accent:#2f81f7; --green:#3fb950; --amber:#d29922; }
+			* { box-sizing:border-box; }
+			body { margin:0; font:15px/1.5 ui-sans-serif,system-ui,sans-serif; background:var(--bg); color:var(--text); }
+			.wrap { max-width:980px; margin:0 auto; padding:28px 20px 80px; }
+			h1 { font-size:22px; margin:0 0 4px; }
+			.sub { color:var(--muted); margin:0 0 22px; }
+			.row { display:flex; gap:16px; flex-wrap:wrap; margin-bottom:16px; align-items:flex-end; }
+			label { font-size:13px; color:var(--muted); display:block; margin-bottom:6px; }
+			.toggle { display:inline-flex; border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+			.toggle button { background:transparent; color:var(--text); border:0; padding:7px 12px; cursor:pointer; }
+			.toggle button.on { background:var(--accent); color:#fff; }
+			textarea { width:100%; min-height:60px; background:#0d1117; color:var(--text); border:1px solid var(--border); border-radius:8px; padding:10px; font:inherit; }
+			.go { margin-top:12px; background:var(--green); color:#04210c; border:0; padding:10px 22px; border-radius:8px; font-weight:600; cursor:pointer; }
+			.go:disabled { opacity:.5; }
+			.pipe { display:flex; align-items:stretch; gap:0; margin:24px 0; }
+			.node { flex:1; background:var(--panel); border:2px solid var(--border); border-radius:12px; padding:14px; transition:all .3s; }
+			.node h3 { margin:0 0 6px; font-size:15px; display:flex; align-items:center; gap:8px; }
+			.dot { width:10px; height:10px; border-radius:50%; background:var(--muted); display:inline-block; }
+			.node.running { border-color:var(--amber); box-shadow:0 0 0 3px #d2992233; }
+			.node.running .dot { background:var(--amber); animation:pulse 1s infinite; }
+			.node.done { border-color:var(--green); }
+			.node.done .dot { background:var(--green); }
+			.node .body { font-size:13px; color:var(--muted); white-space:pre-wrap; max-height:160px; overflow:auto; }
+			.arrow { display:flex; align-items:center; padding:0 6px; color:var(--muted); font-size:22px; }
+			@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.3;} }
+			.final { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:16px; }
+			.final pre { white-space:pre-wrap; margin:6px 0 0; }
+			.err { color:#f85149; }
+		</style>
+	</head>
+	<body>
+		<div class="wrap">
+			<h1>Sequential workflow — live ordering</h1>
+			<p class="sub">Backend (Fastify). Watch each agent light up <b>in order</b> as the workflow advances: Planner → Calculator (MCP) → Summarizer.</p>
+
+			<div class="row">
+				<div>
+					<label>Provider</label>
+					<div class="toggle" id="provider"><button data-v="copilot" class="on">GitHub Copilot</button><button data-v="lmstudio">LM Studio</button></div>
+				</div>
+				<div>
+					<label>Calculator MCP transport</label>
+					<div class="toggle" id="mcp"><button data-v="stdio" class="on">stdio (bunx)</button><button data-v="http">http</button></div>
+				</div>
+			</div>
+
+			<textarea id="prompt">A train travels 240 km in 3 hours. Compute its average speed, then how far it goes in 7 hours.</textarea>
+			<button class="go" id="go">Run workflow</button>
+
+			<div class="pipe" id="pipe"></div>
+
+			<div class="final">
+				<label>Final answer</label>
+				<pre id="final"></pre>
+			</div>
+		</div>
+
+		<script>
+			const pick = (id) => { const g = document.getElementById(id); g.onclick = (e) => { if (e.target.tagName!=="BUTTON") return; [...g.children].forEach(b=>b.classList.remove("on")); e.target.classList.add("on"); }; return () => g.querySelector(".on").dataset.v; };
+			const provider = pick("provider"), mcp = pick("mcp");
+			const pipe = document.getElementById("pipe"), final = document.getElementById("final"), go = document.getElementById("go");
+			let nodes = [];
+
+			function drawPipeline(names) {
+				pipe.innerHTML = ""; nodes = [];
+				names.forEach((name, i) => {
+					if (i > 0) { const a = document.createElement("div"); a.className = "arrow"; a.textContent = "→"; pipe.appendChild(a); }
+					const n = document.createElement("div"); n.className = "node"; n.id = "node-" + i;
+					n.innerHTML = `<h3><span class="dot"></span>${i + 1}. ${name}</h3><div class="body">waiting…</div>`;
+					pipe.appendChild(n); nodes.push(n);
+				});
+				if (nodes[0]) nodes[0].classList.add("running");
+			}
+
+			go.onclick = async () => {
+				go.disabled = true; final.textContent = ""; final.classList.remove("err"); pipe.innerHTML = "";
+				try {
+					const res = await fetch("/api/workflow", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ provider: provider(), mcp: mcp(), prompt: document.getElementById("prompt").value }) });
+					const reader = res.body.getReader(); const dec = new TextDecoder(); let buf = "";
+					for (;;) {
+						const { value, done } = await reader.read(); if (done) break;
+						buf += dec.decode(value, { stream:true });
+						const frames = buf.split("\n\n"); buf = frames.pop();
+						for (const f of frames) {
+							const ev = /event: (.*)/.exec(f)?.[1];
+							const data = JSON.parse(/data: (.*)/.exec(f)?.[1] ?? "{}");
+							if (ev === "plan") drawPipeline(data.agents);
+							else if (ev === "step") {
+								const n = nodes[data.index];
+								if (n) { n.classList.remove("running"); n.classList.add("done"); n.querySelector(".body").textContent = data.output; }
+								const next = nodes[data.index + 1];
+								if (next) next.classList.add("running");
+							} else if (ev === "done") { final.textContent = data.output; }
+							else if (ev === "error") { final.classList.add("err"); final.textContent = "Error: " + data.message; }
+						}
+					}
+				} catch (e) { final.classList.add("err"); final.textContent = "Error: " + e.message; }
+				finally { go.disabled = false; }
+			};
+		</script>
+	</body>
+</html>

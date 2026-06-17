@@ -1,0 +1,33 @@
+:root {
+	--bg: #0d1117;
+	--panel: #161b22;
+	--border: #30363d;
+	--text: #e6edf3;
+	--muted: #8b949e;
+	--accent: #2f81f7;
+	--green: #3fb950;
+	--amber: #d29922;
+	--math: #a371f7;
+	--writer: #f0883e;
+}
+* { box-sizing: border-box; }
+body { margin: 0; font: 15px/1.5 ui-sans-serif, system-ui, sans-serif; background: var(--bg); color: var(--text); }
+.wrap { max-width: 900px; margin: 0 auto; padding: 28px 20px 80px; }
+h1 { font-size: 22px; margin: 0 0 4px; }
+.sub { color: var(--muted); margin: 0 0 22px; }
+.card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px; }
+.row { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end; }
+.row > div { flex: 1; min-width: 180px; }
+.toggle { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.toggle button { background: transparent; color: var(--text); border: 0; padding: 7px 12px; cursor: pointer; font: inherit; }
+.toggle button.on { background: var(--accent); color: #fff; }
+input, textarea { width: 100%; background: #0d1117; color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 10px; font: inherit; }
+textarea { min-height: 70px; resize: vertical; }
+.go { margin-top: 12px; background: var(--green); color: #04210c; border: 0; padding: 10px 22px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+.go:disabled { opacity: 0.5; cursor: default; }
+pre { white-space: pre-wrap; word-break: break-word; background: #0d1117; border: 1px solid var(--border); border-radius: 8px; padding: 14px; min-height: 50px; margin: 0; }
+.tools { font-size: 12px; color: var(--muted); margin-top: 10px; }
+.tools code { color: var(--accent); }
+.note { font-size: 12px; color: var(--amber); margin-top: 8px; }
+.err { color: #f85149; }

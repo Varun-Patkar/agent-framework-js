@@ -1,0 +1,19 @@
+{
+  "name": "agent-framework-js-examples",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Runnable examples for agent-framework-js. Single npm workspace sharing hoisted dependencies. NOT published.",
+  "type": "module",
+  "workspaces": [
+    "backend/*",
+    "frontend/*"
+  ],
+  "scripts": {
+    "be:single": "npm run dev -w backend-single-agent-mcp",
+    "be:orchestrator": "npm run dev -w backend-orchestrator-subagents",
+    "be:workflow": "npm run dev -w backend-workflow-visual",
+    "fe:single": "npm run dev -w frontend-single-agent-mcp",
+    "fe:orchestrator": "npm run dev -w frontend-orchestrator-subagents",
+    "fe:workflow": "npm run dev -w frontend-workflow-visual"
+  }
+}
