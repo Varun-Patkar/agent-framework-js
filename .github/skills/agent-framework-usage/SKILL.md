@@ -257,7 +257,136 @@ or a `isComplete` completion signal; `failurePolicy` is `fail-soft` (default) or
 `maxConcurrency` bounds parallelism. Checkpoints resume deterministically and fail closed on
 corrupt/version-mismatched data.
 
-## 7. Persist conversations
+Stream a workflow to observe progress one step at a time. For `sequential`, round *N* completes
+`agents[N-1]`, so you can light up a pipeline node-by-node:
+
+```ts
+for await (const ev of wf.runStream("Compute and explain.")) {
+  if (ev.type === "round") {
+    console.log(`step ${ev.round}:`, ev.output); // latest combined output
+  } else if (ev.type === "awaiting-input") {
+    // pause for a human; resume later with wf.resume(ev.state, answer)
+  } else if (ev.type === "done") {
+    console.log(ev.state.status, ev.state.output);
+  }
+}
+```
+
+## 7. Orchestration recipes (end-to-end) — the definitive patterns
+
+These two recipes are the canonical, supported ways to coordinate multiple agents. Prefer them
+over ad-hoc glue. Both work identically across Copilot and OpenAI-compatible (LM Studio) providers.
+
+### Recipe A — Orchestrator + subagents (subagents exposed as tools)
+
+Use this when one coordinating agent should **decide which specialist to call** and combine their
+results. Each subagent is a normal agent; you expose it to the orchestrator as a `defineTool` whose
+`run` delegates to `subagent.run(...)`. The orchestrator keeps a multi-turn `Thread`.
+
+```ts
+import { createAgent, type Thread } from "agent-framework-js/agents";
+import { defineTool } from "agent-framework-js/tools";
+
+// Specialists (one uses MCP/code tools, one is a plain LLM).
+const mathAgent = createAgent({
+  name: "MathAgent",
+  instructions: "You are a math specialist. Use the calc.calculate tool and return only the result.",
+  provider,
+  tools: calcTools, // e.g. from connectMCP(...).listTools()
+});
+const writerAgent = createAgent({
+  name: "WriterAgent",
+  instructions: "You are a concise writer. Turn facts into a friendly one-paragraph explanation.",
+  provider,
+});
+
+// Expose each specialist to the orchestrator as a tool.
+const askMath = defineTool({
+  name: "ask_math",
+  description: "Delegate a calculation or math question to the Math specialist.",
+  inputSchema: { type: "object", properties: { question: { type: "string" } }, required: ["question"] },
+  run: async ({ question }: { question: string }) => ({ answer: (await mathAgent.run(question)).output }),
+});
+const askWriter = defineTool({
+  name: "ask_writer",
+  description: "Delegate prose writing / explanation to the Writer specialist.",
+  inputSchema: { type: "object", properties: { task: { type: "string" } }, required: ["task"] },
+  run: async ({ task }: { task: string }) => ({ text: (await writerAgent.run(task)).output }),
+});
+
+const orchestrator = createAgent({
+  name: "Orchestrator",
+  instructions:
+    "You coordinate two specialists. Use ask_math for any calculation and ask_writer to compose " +
+    "explanations. Combine their results into a helpful final reply.",
+  provider,
+  tools: [askMath, askWriter],
+});
+
+// Keep a Thread to stay multi-turn across messages.
+let thread: Thread | undefined;
+const res = await orchestrator.run("What is 12*12, and explain the result simply?", { thread });
+thread = res.thread; // reuse on the next turn
+console.log(res.output);
+```
+
+When to choose this: dynamic routing, tool-using specialists, or multi-turn conversations where the
+coordinator decides the plan. To surface which subagent ran (e.g. for a UI), emit an event inside
+each tool's `run` before/after the delegated `subagent.run(...)`.
+
+### Recipe B — Fixed pipeline with a workflow (deterministic order)
+
+Use this when the order of agents is **known and fixed** — e.g. `Planner → Calculator → Summarizer`.
+The Calculator holds the tools; each agent receives the previous agent's output.
+
+```ts
+import { createAgent } from "agent-framework-js/agents";
+import { createWorkflow } from "agent-framework-js/workflows";
+
+const planner = createAgent({
+  name: "Planner",
+  instructions: "Break the user's request into a short, numbered calculation plan. Be brief.",
+  provider,
+});
+const calculator = createAgent({
+  name: "Calculator",
+  instructions: "Execute the plan using the calc.calculate tool. Report each numeric result.",
+  provider,
+  tools: calcTools,
+});
+const summarizer = createAgent({
+  name: "Summarizer",
+  instructions: "Write a clear final answer for the user based on the computed results.",
+  provider,
+});
+
+const agents = [planner, calculator, summarizer];
+const wf = createWorkflow({ pattern: "sequential", agents });
+
+for await (const ev of wf.runStream("Derivative of 3x^2 + 2x + 1, then evaluate at x=5.")) {
+  if (ev.type === "round") {
+    const idx = ev.round - 1; // sequential: round N completed agents[N-1]
+    console.log(`${agents[idx]?.name}:`, ev.output);
+  } else if (ev.type === "done") {
+    console.log("final:", ev.state.output);
+  }
+}
+```
+
+When to choose this: a stable assembly line, easy progress visualization, and resumable
+checkpoints. For dynamic delegation instead, use Recipe A.
+
+### Robustness with smaller/local models
+
+A tool-using agent **never returns a blank answer just because the model misbehaves**. If a model
+loops on tool calls until the iteration cap (`status: "limit-exceeded"`), or ends a turn with empty
+text right after a successful tool call, the run loop (both `run` and `runStream`) falls back to the
+best available content — the model's last text, otherwise the most recent successful tool result.
+This keeps a workflow node (e.g. Calculator) or a subagent from emitting nothing; a downstream
+Summarizer/Orchestrator can still produce the final prose. Tune `maxIterations` to allow more
+tool rounds when a plan has many steps.
+
+## 8. Persist conversations
 
 ```ts
 import {
@@ -271,7 +400,7 @@ await ThreadPersistence.save(store, res.thread);
 const restored = await ThreadPersistence.load(store, res.thread.id);
 ```
 
-## 8. Observability
+## 9. Observability
 
 ```ts
 import { configureObservability } from "agent-framework-js/observability";
@@ -281,7 +410,7 @@ configureObservability({ tracer: myOtelTracer, enabled: true });
 Spans are emitted for runs/tools/providers/workflows; all attributes and errors are redaction-scrubbed
 so no secret leaks.
 
-## 9. Declarative agents
+## 10. Declarative agents
 
 ```ts
 import { loadAgentDefinition } from "agent-framework-js/declarative";

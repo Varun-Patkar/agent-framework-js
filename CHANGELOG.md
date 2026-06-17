@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-06-17
+
+First stable release. The public API across `core`, `providers`, `tools`, `agents`, `mcp`, `skills`,
+`workflows`, `middleware`, `persistence`, `observability`, and `declarative` is now considered
+stable and follows semantic versioning.
+
+### Added
+
+- **Definitive orchestration recipes for AI agents** in the agent-usage skill
+  (`.github/skills/agent-framework-usage/SKILL.md`): Recipe A — orchestrator with subagents exposed
+  as tools (dynamic routing, multi-turn `Thread`); Recipe B — fixed `Planner → Calculator →
+  Summarizer` pipeline via a streamed sequential workflow. The workflow section now documents
+  `runStream` events (`round` / `awaiting-input` / `done`) and the small/local-model robustness
+  guarantee. README cross-links each runnable example to its recipe.
+
 ## [0.4.2] - 2026-06-17
 
 ### Fixed

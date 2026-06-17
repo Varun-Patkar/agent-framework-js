@@ -139,6 +139,11 @@ as a live check of the public API. Each of the three scenarios ships in two flav
 | Multi-turn orchestrator + 2 subagents | `examples/backend/orchestrator-subagents` | `examples/frontend/orchestrator-subagents` |
 | Workflow with live agent-order visuals | `examples/backend/workflow-visual` | `examples/frontend/workflow-visual` |
 
+The two multi-agent scenarios map to the **definitive orchestration recipes** documented for AI
+agents in the [agent-usage skill](.github/skills/agent-framework-usage/SKILL.md#7-orchestration-recipes-end-to-end--the-definitive-patterns):
+the *orchestrator + subagents* example is **Recipe A** (subagents exposed as tools, dynamic routing)
+and the *workflow* example is **Recipe B** (a fixed `Planner → Calculator → Summarizer` pipeline).
+
 Every example has a **GitHub Copilot ⇄ LM Studio** toggle (LM Studio is assumed to be running
 locally). The differences between the two flavors mirror real deployment constraints:
 
