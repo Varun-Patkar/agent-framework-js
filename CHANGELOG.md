@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-06-17
+
+### Fixed
+
+- **Tool-using agents no longer return a blank answer when a (typically local /
+  LM Studio) model loops on tool calls or stops without final text.** The run loop
+  (both streaming and non-streaming) now falls back to the best available content —
+  the model's last text, otherwise the most recent successful tool result — when it
+  hits the iteration cap (`limit-exceeded`) or ends a turn with empty content after
+  a successful tool call. This fixes the workflow example's Calculator node showing
+  empty output under LM Studio.
+
 ## [0.4.1] - 2026-06-17
 
 ### Fixed

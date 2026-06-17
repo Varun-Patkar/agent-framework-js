@@ -90,5 +90,8 @@ describe("US1 agent (contract)", () => {
 		});
 		const res = await agent.run("go");
 		expect(res.status).toBe("limit-exceeded");
+		// A looping model must not yield a blank answer: fall back to the last
+		// successful tool result so callers (e.g. a workflow node) show something.
+		expect(res.output).toBe(JSON.stringify("ok"));
 	});
 });

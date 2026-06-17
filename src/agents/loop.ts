@@ -51,12 +51,18 @@ export async function runLoop(
 	const maxIterations = options?.maxIterations ?? 10;
 	const working = [...messages];
 	let iteration = 0;
+	// Best-available content to surface if the model never settles on a final
+	// answer and we hit the iteration cap (common with small local models that
+	// loop on tool calls). Prefer the model's own last text; otherwise fall back
+	// to the most recent successful tool result so the run never returns blank.
+	let lastText = "";
+	let lastToolText = "";
 
 	for (; ;) {
 		if (maxIterations !== -1 && iteration >= maxIterations) {
 			return {
 				messages: working,
-				final: { text: "" },
+				final: { text: lastText || lastToolText },
 				status: "limit-exceeded",
 			};
 		}
@@ -69,7 +75,15 @@ export async function runLoop(
 			signal: options?.signal,
 		});
 
+		if (response.text) lastText = response.text;
+
 		if (!response.toolCalls || response.toolCalls.length === 0) {
+			// If the model ends its turn without text but has already produced a
+			// successful tool result, surface that result rather than an empty answer
+			// (some local models compute via a tool then return blank content).
+			if (!response.text && lastToolText) {
+				return { messages: working, final: { ...response, text: lastToolText }, status: "completed" };
+			}
 			return { messages: working, final: response, status: "completed" };
 		}
 
@@ -89,6 +103,7 @@ export async function runLoop(
 			const payload = result.error
 				? `ERROR (${result.error.reason}): ${result.error.message}`
 				: JSON.stringify(result.value ?? null);
+			if (!result.error) lastToolText = payload;
 			working.push({
 				role: "tool",
 				name: call.name,

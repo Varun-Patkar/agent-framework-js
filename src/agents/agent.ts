@@ -210,13 +210,18 @@ export function createAgent(config: AgentConfig): Agent {
 		let finalText = "";
 		let finalReasoning = "";
 		let iteration = 0;
+		// Best-available content if the model loops until the iteration cap: prefer
+		// its own last text, else the most recent successful tool result, so a
+		// looping local model surfaces something instead of an empty answer.
+		let lastText = "";
+		let lastToolText = "";
 
 		try {
 			for (;;) {
 				if (maxIterations !== -1 && iteration >= maxIterations) {
 					yield {
 						type: "done",
-						result: { output: "", status: "limit-exceeded", partial: false, thread },
+						result: { output: lastText || lastToolText, status: "limit-exceeded", partial: false, thread },
 					};
 					return;
 				}
@@ -243,11 +248,13 @@ export function createAgent(config: AgentConfig): Agent {
 						response = chunk.response;
 					}
 				}
+				if (turnText) lastText = turnText;
 
 				const toolCalls = response?.toolCalls;
 				if (!toolCalls || toolCalls.length === 0) {
-					// Final answer reached.
-					finalText = response?.text || turnText;
+					// Final answer reached. If the model ends without text but already
+					// produced a successful tool result, surface that instead of blank.
+					finalText = response?.text || turnText || lastToolText;
 					finalReasoning = response?.reasoning || turnReasoning;
 					break;
 				}
@@ -265,6 +272,7 @@ export function createAgent(config: AgentConfig): Agent {
 					const payload = result.error
 						? `ERROR (${result.error.reason}): ${result.error.message}`
 						: JSON.stringify(result.value ?? null);
+					if (!result.error) lastToolText = payload;
 					working.push({
 						role: "tool",
 						name: call.name,
