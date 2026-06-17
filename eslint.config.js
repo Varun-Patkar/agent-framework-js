@@ -6,7 +6,7 @@ import tseslint from "typescript-eslint";
 
 export default tseslint.config(
 	// Files/dirs ESLint should never look at.
-	{ ignores: ["dist", "node_modules", "**/*.config.ts"] },
+	{ ignores: ["dist", "node_modules", "examples", "**/*.config.ts"] },
 	// TypeScript sources: base + typescript-eslint recommended rule sets.
 	{
 		files: ["**/*.ts"],

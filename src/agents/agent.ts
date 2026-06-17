@@ -189,8 +189,10 @@ export function createAgent(config: AgentConfig): Agent {
 	}
 
 	async function* runStream(input: AgentInput, opts?: RunOptions): AsyncIterable<RunChunk> {
-		// Streaming path: single provider streaming call (tool loops use non-streaming
-		// internally). Suitable for the common single-turn streaming case.
+		// Streaming path: drives the same tool-call loop as the non-streaming `run`,
+		// but streams the model's text/reasoning for each turn. Tool-call turns are
+		// executed and their results fed back; the final (tool-free) turn's text is
+		// the answer. (FR-011a, FR-012b)
 		let thread: Thread;
 		try {
 			thread = await prepare(input, opts);
@@ -202,41 +204,90 @@ export function createAgent(config: AgentConfig): Agent {
 			throw e;
 		}
 
-		let text = "";
-		let reasoning = "";
+		const maxIterations = config.maxIterations ?? 10;
+		// Working transcript the loop appends to (assistant tool-call turns + tool results).
+		const working: Message[] = [...thread.messages];
+		let finalText = "";
+		let finalReasoning = "";
+		let iteration = 0;
+
 		try {
-			for await (const chunk of config.provider.generateStream({
-				messages: thread.messages,
-				tools: registry.specs(),
-				model: config.model,
-				signal: opts?.signal,
-			})) {
-				if (chunk.type === "text") {
-					text += chunk.text;
-					yield { type: "text", text: chunk.text };
-				} else if (chunk.type === "reasoning" && modelCaps().supportsReasoning) {
-					reasoning += chunk.text;
-					yield { type: "reasoning", text: chunk.text };
-				} else if (chunk.type === "done") {
-					text = chunk.response.text || text;
-					reasoning = chunk.response.reasoning || reasoning;
+			for (;;) {
+				if (maxIterations !== -1 && iteration >= maxIterations) {
+					yield {
+						type: "done",
+						result: { output: "", status: "limit-exceeded", partial: false, thread },
+					};
+					return;
+				}
+				iteration++;
+
+				// Stream one provider turn, accumulating this turn's text/reasoning and
+				// capturing the complete response (which carries any tool calls).
+				let turnText = "";
+				let turnReasoning = "";
+				let response: GenerateResponse | undefined;
+				for await (const chunk of config.provider.generateStream({
+					messages: working,
+					tools: registry.specs(),
+					model: config.model,
+					signal: opts?.signal,
+				})) {
+					if (chunk.type === "text") {
+						turnText += chunk.text;
+						yield { type: "text", text: chunk.text };
+					} else if (chunk.type === "reasoning" && modelCaps().supportsReasoning) {
+						turnReasoning += chunk.text;
+						yield { type: "reasoning", text: chunk.text };
+					} else if (chunk.type === "done") {
+						response = chunk.response;
+					}
+				}
+
+				const toolCalls = response?.toolCalls;
+				if (!toolCalls || toolCalls.length === 0) {
+					// Final answer reached.
+					finalText = response?.text || turnText;
+					finalReasoning = response?.reasoning || turnReasoning;
+					break;
+				}
+
+				// Record the assistant's tool-call turn (preserving any reasoning blob),
+				// then execute each requested tool and feed results back for self-correction.
+				working.push({
+					role: "assistant",
+					parts: turnText ? [{ type: "text", text: turnText }] : [],
+					toolCalls,
+					...(response?.reasoningOpaque ? { reasoningOpaque: response.reasoningOpaque } : {}),
+				});
+				for (const call of toolCalls) {
+					const result = await registry.invoke(call.name, call.arguments, config.toolTimeoutMs);
+					const payload = result.error
+						? `ERROR (${result.error.reason}): ${result.error.message}`
+						: JSON.stringify(result.value ?? null);
+					working.push({
+						role: "tool",
+						name: call.name,
+						toolCallId: call.id,
+						parts: [{ type: "text", text: payload }],
+					});
 				}
 			}
 		} catch (e) {
 			const error = e instanceof ProviderError ? e : new ProviderError((e as Error).message, "transient");
 			yield {
 				type: "done",
-				result: { output: text, status: "incomplete", partial: true, error, thread },
+				result: { output: finalText, status: "incomplete", partial: true, error, thread },
 			};
 			return;
 		}
 
-		if (text) thread.add({ role: "assistant", parts: [{ type: "text", text }] });
+		if (finalText) thread.add({ role: "assistant", parts: [{ type: "text", text: finalText }] });
 		yield {
 			type: "done",
 			result: {
-				output: text,
-				reasoning: modelCaps().supportsReasoning ? reasoning || undefined : undefined,
+				output: finalText,
+				reasoning: modelCaps().supportsReasoning ? finalReasoning || undefined : undefined,
 				status: "completed",
 				partial: false,
 				thread,

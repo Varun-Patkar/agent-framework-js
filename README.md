@@ -127,6 +127,50 @@ in a browser against the default host. Run it server-side (Node/edge), or route 
 lightweight proxy (e.g. a Vite dev-server proxy) and set `baseUrl` to your proxy. See the
 [agent-usage skill](.github/skills/agent-framework-usage/SKILL.md) for a proxy example.
 
+## Examples
+
+Runnable examples live in [`examples/`](examples) as a single npm workspace (deps are hoisted, so
+one install covers everything). They consume the **published** `agent-framework-js` package and act
+as a live check of the public API. Each of the three scenarios ships in two flavors:
+
+| Scenario | Backend (Fastify, serves rich HTML) | Frontend (React + Vite, no backend) |
+| --- | --- | --- |
+| Single-turn agent + calculator MCP | `examples/backend/single-agent-mcp` | `examples/frontend/single-agent-mcp` |
+| Multi-turn orchestrator + 2 subagents | `examples/backend/orchestrator-subagents` | `examples/frontend/orchestrator-subagents` |
+| Workflow with live agent-order visuals | `examples/backend/workflow-visual` | `examples/frontend/workflow-visual` |
+
+Every example has a **GitHub Copilot ⇄ LM Studio** toggle (LM Studio is assumed to be running
+locally). The differences between the two flavors mirror real deployment constraints:
+
+- **Credentials.** Backend examples read the Copilot token **server-side** from `examples/.env`
+  (`COPILOT_TOKEN`). Frontend examples cannot ship a secret, so the user **pastes their own token**
+  into the UI; Copilot is reached through a Vite dev proxy (`/copilot`) because the browser cannot
+  call `api.githubcopilot.com` directly (no CORS), which also lifts the framework's browser guard.
+- **MCP transport.** Backend examples support **both stdio** (spawning
+  `bunx @cyanheads/calculator-mcp-server`) **and http**. Frontend examples are **http-only** — the
+  browser cannot spawn a stdio process — and proxy the hosted calculator MCP server via Vite.
+
+Run an example (installs once at the workspace root):
+
+```bash
+cd examples
+npm install
+cp .env.example .env        # backend only: set COPILOT_TOKEN if you use Copilot
+
+# Backends (each serves its UI on http://localhost:3001-3003):
+npm run be:single
+npm run be:orchestrator
+npm run be:workflow
+
+# Frontends (Vite dev server on http://localhost:5101-5103):
+npm run fe:single
+npm run fe:orchestrator
+npm run fe:workflow
+```
+
+The examples are intentionally minimal — they just use the framework — and are excluded from the
+published package.
+
 ## Scripts
 
 ```bash

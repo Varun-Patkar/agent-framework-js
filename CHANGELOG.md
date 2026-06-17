@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-06-17
+
+### Fixed
+
+- **Streaming agent runs now execute tool calls.** `agent.runStream` previously made a single
+  streaming provider call and ignored tool-call chunks, so a tool-using agent streamed no text and
+  finished with empty output. It now drives the same tool-call loop as `agent.run`: each turn is
+  streamed, any requested tools are executed, their results are fed back, and the loop continues
+  until the model produces a final tool-free answer (honoring `maxIterations` and `toolTimeoutMs`).
+
 ## [0.4.0] - 2026-06-16
 
 ### Changed

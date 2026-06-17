@@ -3,7 +3,7 @@ dist/
 coverage/
 *.log
 .env
-.env.*
+.env
 .DS_Store
 Thumbs.db
 *.tmp

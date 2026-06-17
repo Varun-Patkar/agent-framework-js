@@ -9,7 +9,17 @@ Contributions, enhancements, and issue reports are all welcome.
   ideally, a minimal reproduction.
 - **Suggest enhancements**: Open an issue describing the use case and proposed API. Keep changes
   modular and tree-shakeable, in line with the project's design principles.
-- **Submit pull requests**: Fork, branch, and open a PR. Please include tests and documentation.
+- **Submit pull requests**: Please **fork the repository**, create a branch from `develop`, and open
+  your pull request **against the `develop` branch** (not `main`). Include tests and documentation.
+
+## Branching model
+
+- **`main`** is the default, release branch and is protected — it only receives changes via pull
+  request.
+- **`develop`** is the integration branch and is also protected. **External contributors cannot push
+  to it directly** and must open a pull request from their fork. (The maintainer may commit to
+  `develop` directly.)
+- So the contribution flow is: **fork → branch off `develop` → PR into `develop`**.
 
 ## Roadmap / TODO
 
