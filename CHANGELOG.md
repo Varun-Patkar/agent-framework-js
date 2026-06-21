@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-06-21
+
+### Fixed
+
+- **`GenerateResponse.usage` is now populated with real token counts** from the
+  OpenAI-compatible (and therefore Copilot) provider, instead of always being
+  `undefined`. Non-streaming calls read the `usage` object from the response;
+  streaming calls send `stream_options: { include_usage: true }` and surface the
+  trailing usage chunk in the final `done` response. OpenAI's
+  `prompt_tokens`/`completion_tokens` are mapped to `inputTokens`/`outputTokens`.
+
 ## [1.0.0] - 2026-06-17
 
 First stable release. The public API across `core`, `providers`, `tools`, `agents`, `mcp`, `skills`,

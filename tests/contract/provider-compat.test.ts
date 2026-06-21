@@ -230,3 +230,54 @@ describe("provider compat: Copilot headers (bug 2)", () => {
 		expect(seen["Editor-Version"]).toBeDefined(); // other defaults retained
 	});
 });
+
+describe("provider compat: token usage reporting", () => {
+	it("reads usage from the non-streaming response", async () => {
+		const provider = createOpenAICompatibleProvider({
+			baseUrl: "http://x/v1",
+			getCredential: () => "t",
+			capabilities: caps,
+			fetchImpl: async () =>
+				jsonResponse({
+					choices: [{ message: { content: "hi" } }],
+					usage: { prompt_tokens: 42, completion_tokens: 7 },
+				}),
+		});
+
+		const res = await provider.generate({
+			messages: [{ role: "user", parts: [{ type: "text", text: "x" }] }],
+		});
+		expect(res.usage).toEqual({ inputTokens: 42, outputTokens: 7 });
+	});
+
+	it("requests include_usage and surfaces the trailing usage chunk when streaming", async () => {
+		let sentBody: Record<string, unknown> = {};
+		const provider = createOpenAICompatibleProvider({
+			baseUrl: "http://x/v1",
+			getCredential: () => "t",
+			capabilities: caps,
+			fetchImpl: async (_url, init) => {
+				sentBody = JSON.parse(init?.body as string);
+				return sseResponse([
+					{ choices: [{ delta: { content: "hi" } }] },
+					// Trailing usage chunk: choices is empty, usage carries the counts.
+					{ choices: [], usage: { prompt_tokens: 11, completion_tokens: 3 } },
+				]);
+			},
+		});
+
+		const chunks = [];
+		for await (const c of provider.generateStream({
+			messages: [{ role: "user", parts: [{ type: "text", text: "x" }] }],
+		})) {
+			chunks.push(c);
+		}
+
+		expect((sentBody.stream_options as { include_usage?: boolean }).include_usage).toBe(true);
+		const done = chunks.find((c) => c.type === "done");
+		expect(done?.type === "done" && done.response.usage).toEqual({
+			inputTokens: 11,
+			outputTokens: 3,
+		});
+	});
+});
