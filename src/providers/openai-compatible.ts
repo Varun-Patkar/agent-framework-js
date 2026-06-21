@@ -173,6 +173,9 @@ export function createOpenAICompatibleProvider(
 			model: modelOf(req.model).model,
 			messages: toOpenAIMessages(req.messages),
 			stream,
+			// Ask the API to emit a trailing usage chunk on streamed responses so the
+			// final `done` response can surface real token counts (FR usage reporting).
+			...(stream ? { stream_options: { include_usage: true } } : {}),
 			...(wire.tools ? { tools: wire.tools } : {}),
 		});
 	}
@@ -217,6 +220,7 @@ export function createOpenAICompatibleProvider(
 			if (!choice) throw new ProviderError("Provider returned no choices", "malformed");
 			const message = choice.message;
 			const reasoningModel = modelOf(req.model).supportsReasoning;
+			const usage = parseUsage(json["usage"]);
 			let toolCalls = parseToolCalls(message, wire.nameMap);
 
 			// Bug 4(b): some reasoning models report `finish_reason: "tool_calls"` from
@@ -240,6 +244,7 @@ export function createOpenAICompatibleProvider(
 						? ((message["reasoning_opaque"] as string) ?? assembled.reasoningOpaque ?? undefined)
 						: undefined,
 					toolCalls,
+					usage: usage ?? assembled.usage,
 				};
 			}
 
@@ -250,6 +255,7 @@ export function createOpenAICompatibleProvider(
 					? ((message["reasoning_opaque"] as string) ?? undefined)
 					: undefined,
 				toolCalls,
+				usage,
 			};
 		}, options.retry);
 	}
@@ -286,6 +292,8 @@ export function createOpenAICompatibleProvider(
 		let text = "";
 		let reasoning = "";
 		let reasoningOpaque = "";
+		// Trailing usage chunk (sent once near the end when `include_usage` is set).
+		let usage: { inputTokens?: number; outputTokens?: number } | undefined;
 		// Accumulate streamed tool-call fragments keyed by their `index` (which may
 		// start at a non-zero value when reasoning deltas occupy the first indices).
 		const toolAccum = new Map<number, { id?: string; name?: string; args: string }>();
@@ -315,8 +323,13 @@ export function createOpenAICompatibleProvider(
 								}>;
 							};
 						}>;
+						usage?: unknown;
 					}
 					| undefined;
+				// The usage chunk arrives with an empty `choices` array, so parse it
+				// before bailing on a missing delta.
+				const chunkUsage = parseUsage(parsed?.usage);
+				if (chunkUsage) usage = chunkUsage;
 				const delta = parsed?.choices?.[0]?.delta;
 				if (!delta) continue;
 				if (delta.content) {
@@ -363,6 +376,7 @@ export function createOpenAICompatibleProvider(
 				reasoning: reasoning || undefined,
 				reasoningOpaque: reasoningOpaque || undefined,
 				toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
+				usage,
 			},
 		};
 	}
@@ -383,4 +397,18 @@ function safeJson(s: string): unknown {
 	} catch {
 		return undefined;
 	}
+}
+
+/**
+ * Normalize an OpenAI-style `usage` object (`prompt_tokens` / `completion_tokens`)
+ * into the framework's `{ inputTokens, outputTokens }` shape. Returns `undefined`
+ * when no usable counts are present so callers can fall back to estimation.
+ */
+function parseUsage(raw: unknown): { inputTokens?: number; outputTokens?: number } | undefined {
+	if (!raw || typeof raw !== "object") return undefined;
+	const u = raw as { prompt_tokens?: unknown; completion_tokens?: unknown };
+	const inputTokens = typeof u.prompt_tokens === "number" ? u.prompt_tokens : undefined;
+	const outputTokens = typeof u.completion_tokens === "number" ? u.completion_tokens : undefined;
+	if (inputTokens === undefined && outputTokens === undefined) return undefined;
+	return { inputTokens, outputTokens };
 }
