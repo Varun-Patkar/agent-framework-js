@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-06-24
+
+### Added
+
+- **Custom HTTP headers & secrets for remote MCP servers** (`mcp` module), matching the `mcp.json`
+  HTTP server format. The `remote` transport now accepts `headers` (static record or an async
+  callback resolved lazily at connect time, so secrets are never persisted) and an optional `type`
+  (`"http"` Streamable HTTP — the default — or `"sse"` for legacy Server-Sent Events servers).
+  Empty header values are dropped and values are redacted in logs/traces. `stdio` transport gained
+  an optional `env` for extra process environment variables.
+
 ## [1.0.1] - 2026-06-21
 
 ### Fixed

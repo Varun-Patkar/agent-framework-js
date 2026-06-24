@@ -83,7 +83,7 @@ Prefer **deep imports** for the smallest bundle: `agent-framework-js/agents`,
 | Agents        | `agents`        | text + multimodal input, streaming, reasoning field, threads with compaction |
 | Providers     | `providers`     | Copilot + OpenAI-compatible; caller-injected credentials; retry/backoff      |
 | Tools         | `tools`         | local function tools, JSON-Schema validation, namespacing, enable/disable    |
-| MCP           | `mcp`           | remote (HTTP/SSE) everywhere; stdio in Node only                             |
+| MCP           | `mcp`           | remote (HTTP/SSE) with custom headers everywhere; stdio in Node only          |
 | Skills        | `skills`        | progressive disclosure; client-side keyword index                            |
 | Workflows     | `workflows`     | sequential / concurrent / handoff / group; HITL; checkpoints                 |
 | Middleware    | `middleware`    | request/response pipeline                                                    |
