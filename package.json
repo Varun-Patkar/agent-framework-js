@@ -1,6 +1,6 @@
 {
   "name": "agent-framework-js",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Modular, tree-shakeable JavaScript/TypeScript agent framework for no-backend deployments (browser, edge, Node). Agents, tools, MCP, skills, multi-agent workflows, middleware, persistence, and OpenTelemetry observability.",
   "type": "module",
   "license": "MIT",
