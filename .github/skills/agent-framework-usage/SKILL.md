@@ -215,10 +215,46 @@ const agent = createAgent({
 });
 ```
 
-Remote transport works everywhere. `stdio` (`{ kind: "stdio", command, args }`) works only in Node;
-elsewhere it throws `RuntimeUnsupportedError`. From a **browser**, a remote MCP server that needs an
-auth header isn't reachable directly (the transport sends no custom headers) — proxy it and inject
-the secret server-side (see *Browser reachability* below).
+### HTTP headers & secrets (mcp.json parity)
+
+The remote transport accepts the same fields as an `mcp.json` HTTP server entry — a `url`, an
+optional `type` (`"http"` Streamable HTTP, the default, or `"sse"` for legacy servers), and a
+`headers` object for auth tokens / API keys / content-version headers:
+
+```ts
+const mcp = await connectMCP({
+  id: "remote",
+  transport: {
+    kind: "remote",
+    type: "http", // default; use "sse" for Server-Sent Events servers
+    url: "https://api.example.com/mcp",
+    headers: {
+      Authorization: "Bearer your-api-token-here",
+      "X-API-Key": "key-456",
+    },
+  },
+});
+```
+
+`headers` may also be a (possibly async) callback so secrets are resolved lazily at connect time and
+never persisted on the config — ideal for minting a fresh bearer token:
+
+```ts
+transport: {
+  kind: "remote",
+  url: "https://api.example.com/mcp",
+  headers: async () => ({ Authorization: `Bearer ${await getToken()}` }),
+}
+```
+
+Empty/`null`/`undefined` header values are dropped, so a blank `Authorization` is never sent. Header
+values flow through `redact()` like every other secret in logs and traces. For `stdio`, pass extra
+process env via `transport.env`.
+
+Remote transport works everywhere. `stdio` (`{ kind: "stdio", command, args, env? }`) works only in
+Node; elsewhere it throws `RuntimeUnsupportedError`. From a **browser**, custom headers are sent on
+the MCP requests, but CORS on the remote server still applies — if it doesn't allow your origin,
+proxy it and inject the secret server-side (see *Browser reachability* below).
 
 ## 5. Attach skills
 
