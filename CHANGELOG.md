@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-06-24
+
+### Fixed
+
+- **Re-release combining the MCP HTTP headers feature (1.1.0) with the token-usage
+  fix (1.0.1).** The published 1.1.0 was tagged before the 1.0.1 `GenerateResponse.usage`
+  fix was merged, so packages on 1.1.0 lacked real token counts. 1.1.1 ships both. No
+  source changes beyond the merge of those two lines of history.
+
 ## [1.1.0] - 2026-06-24
 
 ### Added
